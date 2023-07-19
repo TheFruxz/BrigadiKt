@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "1.9.0-RC"
     id("org.jetbrains.dokka") version "1.8.20"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
     `maven-publish`
 }
 
@@ -21,6 +22,10 @@ repositories {
         name = "Minecraft Libraries"
     }
 
+    maven("https://repo.papermc.io/repository/maven-public/") {
+        name = "PaperMC"
+    }
+
 }
 
 dependencies {
@@ -35,6 +40,8 @@ dependencies {
     // MoltenKt
     implementation("com.github.TheFruxz:Ascend:2023.2")
     implementation("com.github.TheFruxz:Stacked:2023.2b")
+
+    implementation("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
 
     // Brigadier
     api("com.mojang:brigadier:1.0.18")
