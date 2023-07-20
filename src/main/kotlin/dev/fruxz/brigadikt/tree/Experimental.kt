@@ -9,72 +9,127 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder.argument
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.tree.ArgumentCommandNode
 import dev.fruxz.ascend.extension.forceCast
+import org.bukkit.command.CommandSender
+import kotlin.reflect.KClass
+import kotlin.reflect.KProperty
 
 data class ActiveCommandArgument<S, T>(
     val node: ArgumentCommandNode<S, T>,
+    val nodeClass: KClass<T & Any>,
+    val host: FrontArgumentBuilder<S, *>,
 ) {
 
-
+    var currentContext: CommandContext<S>? = null
 
 }
 
-//fun <S> string() = ActiveCommandArgument<S, String>(string(""))
+operator fun <S, T> ActiveCommandArgument<S, T>.getValue(thisRef: Any?, property: KProperty<*>): T =
+    this.currentContext?.getArgument(node.name, nodeClass.java.forceCast<Class<T>>())
+        ?: throw IllegalStateException("No command context available for ${node.name} at depth ${host.depth}!")
 
-data class FrontArgumentBuilder<S, T : ArgumentBuilder<S, T>>(
-    val arguments: MutableList<ArgumentCommandNode<S, *>> = mutableListOf(),
+fun <S> FrontArgumentBuilder<S, Int>.intArgument(
+    name: String,
+    min: Int = Int.MIN_VALUE,
+    max: Int = Int.MAX_VALUE
+) =
+    ActiveCommandArgument<S, Int>(
+        node = argument<S, Int>(name, integer(min, max)).build(),
+        nodeClass = Int::class,
+        host = this,
+    ).also(this.arguments::add)
+
+data class FrontArgumentBuilder<S, T>(
+    val depth: Int = 0,
     var run: ((CommandContext<S>) -> Unit)? = null,
     val children: MutableSet<ArgumentBuilder<S, *>> = mutableSetOf(),
+    val arguments: MutableList<ActiveCommandArgument<S, *>> = mutableListOf(),
 ) {
 
-    fun subPath(builder: FrontArgumentBuilder<S, *>.() -> Unit) {
-        this.children.add(FrontArgumentBuilder<S, T>().apply(builder).construct())
+    fun executes(process: (CommandContext<S>) -> Unit) {
+        this.run = process
     }
 
     fun construct(): ArgumentBuilder<S, *> {
+        if (this.arguments.lastIndex < depth) throw IllegalStateException("No arguments provided on depth $depth!")
 
-        val base = argument<S, T>(arguments.first().name, arguments.first().type.forceCast<ArgumentType<T>>())
+        val overflow = this.arguments.lastIndex - depth
+        val base = arguments[depth].node.let { node ->
+            argument<S, T>(node.name, node.type.forceCast<ArgumentType<T>>())
+        }
 
-        base.then(FrontArgumentBuilder<S, T>(arguments = arguments.drop(1).toMutableList(), run = run).construct())
+        if (overflow > 0) {
+            base.then(
+                this
+                    .copy(depth = depth + 1) // increase the depth
+                    .construct()
+            )
+        }
 
         children.forEach { child ->
             base.then(child)
         }
 
-        if (arguments.size <= 1 && run != null) {
+        if (overflow == 0 && run != null) {
             base.executes {
+                arguments.forEach { arg ->
+                    arg.currentContext = it
+                }
+
+                println("Preparing execute at level $depth with args ${base.arguments.joinToString { it.name }}")
+
+                // after preparing the context, run the command
                 run!!.invoke(it)
+
+                // do NOT reset the argument context, because every run indeed automatically receives its own context
                 return@executes Command.SINGLE_SUCCESS
             }
         }
 
         return base
+
     }
 
 }
 
-fun <S, T : ArgumentBuilder<S, T>> ArgumentBuilder<S, T>.subPath(builder: FrontArgumentBuilder<S, *>.() -> Unit) {
+/**
+ * Adds a path to the current front argument builder.
+ *
+ * This method allows you to specify a path within the front argument builder. The path is added as a child to the current front argument builder.
+ *
+ * @param builder A lambda function that provides a DSL-like syntax for constructing a front argument builder. This lambda function is responsible for configuring the child front argument builder.
+ *
+ * @param S The type of the source object.
+ * @param O The type of the constructed object.
+ *
+ * @throws IllegalStateException if the provided builder fails to construct a valid object.
+ */
+fun <S, O> FrontArgumentBuilder<S, *>.path(builder: FrontArgumentBuilder<S, O>.() -> Unit) {
+    this.children.add(FrontArgumentBuilder<S, O>().apply(builder).construct())
+}
+
+/**
+ * Entry point for the command tree.
+ */
+fun <S, T> ArgumentBuilder<S, *>.path(builder: FrontArgumentBuilder<S, T>.() -> Unit) {
     this.then(FrontArgumentBuilder<S, T>().apply(builder).construct())
 }
 
-fun <S> buildCommand(name: String, builder: ArgumentBuilder<S, *>.() -> Unit): ArgumentBuilder<S, *> =
+fun <S> buildCommand(name: String, builder: ArgumentBuilder<S, *>.() -> Unit): LiteralArgumentBuilder<S> =
     LiteralArgumentBuilder.literal<S>(name).apply(builder)
 
-fun test() {
+fun main() {
 
-    buildCommand<Int>("test") {
-        this.subPath {
+    buildCommand<CommandSender>("test") {
+        path {
+            val test by intArgument("amogus")
+            val test2 by intArgument("amogus2")
 
-        }
-    }
-
-    LiteralArgumentBuilder.literal<Int>("test")
-        .then(argument("test", integer()))
-
-    LiteralArgumentBuilder.literal<Collection<Int>>("test")
-        .subPath {
-            this.subPath {
-
+            executes {
+                it.source.sendMessage("amogus $test and $test2")
             }
+
         }
+
+    }
 
 }
