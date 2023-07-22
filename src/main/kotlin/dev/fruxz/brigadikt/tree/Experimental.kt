@@ -2,14 +2,12 @@ package dev.fruxz.brigadikt.tree
 
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.ArgumentType
-import com.mojang.brigadier.arguments.IntegerArgumentType.integer
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder.argument
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.tree.ArgumentCommandNode
 import dev.fruxz.ascend.extension.forceCast
-import org.bukkit.command.CommandSender
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 
@@ -27,16 +25,7 @@ operator fun <S, T> ActiveCommandArgument<S, T>.getValue(thisRef: Any?, property
     this.currentContext?.getArgument(node.name, nodeClass.java.forceCast<Class<T>>())
         ?: throw IllegalStateException("No command context available for ${node.name} at depth ${host.depth}!")
 
-fun <S> FrontArgumentBuilder<S, Int>.intArgument(
-    name: String,
-    min: Int = Int.MIN_VALUE,
-    max: Int = Int.MAX_VALUE
-) =
-    ActiveCommandArgument<S, Int>(
-        node = argument<S, Int>(name, integer(min, max)).build(),
-        nodeClass = Int::class,
-        host = this,
-    ).also(this.arguments::add)
+
 
 data class FrontArgumentBuilder<S, T>(
     val depth: Int = 0,
@@ -116,20 +105,3 @@ fun <S, T> ArgumentBuilder<S, *>.path(builder: FrontArgumentBuilder<S, T>.() -> 
 
 fun <S> buildCommand(name: String, builder: ArgumentBuilder<S, *>.() -> Unit): LiteralArgumentBuilder<S> =
     LiteralArgumentBuilder.literal<S>(name).apply(builder)
-
-fun main() {
-
-    buildCommand<CommandSender>("test") {
-        path {
-            val test by intArgument("amogus")
-            val test2 by intArgument("amogus2")
-
-            executes {
-                it.source.sendMessage("amogus $test and $test2")
-            }
-
-        }
-
-    }
-
-}
