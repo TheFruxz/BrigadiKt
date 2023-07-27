@@ -1,4 +1,4 @@
-package dev.fruxz.brigadikt.arguments
+package dev.fruxz.brigadikt
 
 import com.mojang.brigadier.StringReader
 import com.mojang.brigadier.arguments.ArgumentType
@@ -9,8 +9,8 @@ import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import com.mojang.brigadier.tree.ArgumentCommandNode
-import dev.fruxz.brigadikt.tree.ActiveCommandArgument
-import dev.fruxz.brigadikt.tree.FrontArgumentBuilder
+import dev.fruxz.brigadikt.domain.ActiveCommandArgument
+import dev.fruxz.brigadikt.domain.FrontArgumentBuilder
 import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
 
