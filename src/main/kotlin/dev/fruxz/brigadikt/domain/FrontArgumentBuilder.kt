@@ -14,7 +14,7 @@ data class FrontArgumentBuilder<S, T>(
     val arguments: MutableList<ActiveCommandArgument<S, *>> = mutableListOf(),
 ) {
 
-    fun executes(process: (CommandContext<S>) -> Unit) {
+    fun executes(process: CommandContext<S>.() -> Unit) {
         this.run = process
     }
 

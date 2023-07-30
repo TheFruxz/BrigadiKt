@@ -57,17 +57,15 @@ fun <S, T> FrontArgumentBuilder<S, T>.customArgument(
     name: String,
     argumentType: ArgumentType<T>,
     argumentClass: KClass<T & Any>,
-): ActiveCommandArgument<S, T> = customArgument(name, RequiredArgumentBuilder.argument<S, T>(name, argumentType).build(), argumentClass)
+): ActiveCommandArgument<S, T> = customArgument(RequiredArgumentBuilder.argument<S, T>(name, argumentType).build(), argumentClass)
 
 // prepared custom-arguments
 
 inline fun <S, reified T : Any> FrontArgumentBuilder<S, T>.customArgument(
-    name: String,
     argumentCommandNode: ArgumentCommandNode<S, T>,
-): ActiveCommandArgument<S, T> = customArgument(name, argumentCommandNode, T::class)
+): ActiveCommandArgument<S, T> = customArgument(argumentCommandNode, T::class)
 
 fun <S, T> FrontArgumentBuilder<S, T>.customArgument(
-    name: String,
     argumentCommandNode: ArgumentCommandNode<S, T>,
     argumentClass: KClass<T & Any>
 ): ActiveCommandArgument<S, T> = insertArgument {
