@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.9.0-RC"
+    kotlin("jvm") version "1.9.10"
     id("org.jetbrains.dokka") version "1.8.20"
     id("com.github.johnrengelman.shadow") version "8.1.1"
     `maven-publish`
@@ -35,7 +35,7 @@ dependencies {
     implementation(kotlin("reflect"))
 
     // KotlinX
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
     // MoltenKt
     implementation("com.github.TheFruxz:Ascend:2023.2")

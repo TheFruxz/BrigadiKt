@@ -16,7 +16,7 @@ class TestPlugin : JavaPlugin() {
 
         val command = buildUniversalCommand<CommandSender>("testcommand") {
             path {
-                val test = intArgument("test")
+                val test by intArgument("test")
 
                 executes {
                     source.sendMessage("test: $test")
@@ -29,7 +29,7 @@ class TestPlugin : JavaPlugin() {
                     val test2 = stringArgument("test2")
 
                     executes {
-                        source.sendMessage("test2: ${test2} and test: $test")
+                        source.sendMessage("test2: $test2 and test: $test")
 
                         schedule { source.sendMessage("test2: $test2 and test: $test again") }
 

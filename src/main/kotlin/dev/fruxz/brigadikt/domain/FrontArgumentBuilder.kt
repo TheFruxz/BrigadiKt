@@ -5,6 +5,7 @@ import com.mojang.brigadier.arguments.ArgumentType
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
+import com.mojang.brigadier.suggestion.SuggestionProvider
 import dev.fruxz.ascend.extension.forceCast
 
 data class FrontArgumentBuilder<S, T>(
@@ -40,9 +41,6 @@ data class FrontArgumentBuilder<S, T>(
 
         if (overflow == 0 && run != null) {
             base.executes {
-                arguments.forEach { arg ->
-                    arg.currentContext = it
-                }
 
                 println("Preparing execute at level $depth with args ${base.arguments.joinToString { it.name }}")
 

@@ -72,7 +72,6 @@ fun <S, T> FrontArgumentBuilder<S, T>.customArgument(
     ActiveCommandArgument(
         node = argumentCommandNode,
         nodeClass = argumentClass,
-        host = this,
     )
 }
 
@@ -85,7 +84,6 @@ fun <S> FrontArgumentBuilder<S, Int>.intArgument(
 ): ActiveCommandArgument<S, Int> = ActiveCommandArgument<S, Int>(
     node = RequiredArgumentBuilder.argument<S, Int>(name, IntegerArgumentType.integer(min, max)).build(),
     nodeClass = Int::class,
-    host = this,
 ).also(this.arguments::add)
 
 fun <S> FrontArgumentBuilder<S, String>.stringArgument(
@@ -94,7 +92,6 @@ fun <S> FrontArgumentBuilder<S, String>.stringArgument(
     ActiveCommandArgument<S, String>(
         node = RequiredArgumentBuilder.argument<S, String>(name, StringArgumentType.string()).build(),
         nodeClass = String::class,
-        host = this,
     )
 }
 
@@ -104,7 +101,6 @@ fun <S> FrontArgumentBuilder<S, String>.greedyStringArgument(
     ActiveCommandArgument<S, String>(
         node = RequiredArgumentBuilder.argument<S, String>(name, StringArgumentType.greedyString()).build(),
         nodeClass = String::class,
-        host = this,
     )
 }
 
@@ -114,6 +110,5 @@ fun <S> FrontArgumentBuilder<S, String>.wordStringArgument(
     ActiveCommandArgument<S, String>(
         node = RequiredArgumentBuilder.argument<S, String>(name, StringArgumentType.word()).build(),
         nodeClass = String::class,
-        host = this,
     )
 }
