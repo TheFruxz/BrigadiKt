@@ -15,13 +15,13 @@ import dev.fruxz.brigadikt.domain.FrontArgumentBuilder
  *
  * @throws IllegalStateException if the provided builder fails to construct a valid object.
  */
-fun <S, O> FrontArgumentBuilder<S, *>.path(builder: FrontArgumentBuilder<S, O>.() -> Unit) {
-    this.children.add(FrontArgumentBuilder<S, O>().apply(builder).construct())
+fun <S> FrontArgumentBuilder<S>.path(builder: FrontArgumentBuilder<S>.() -> Unit) {
+    this.children.add(FrontArgumentBuilder<S>().apply(builder).construct())
 }
 
 /**
  * Entry point for the command tree.
  */
-fun <S, T> ArgumentBuilder<S, *>.path(builder: FrontArgumentBuilder<S, T>.() -> Unit) {
-    this.then(FrontArgumentBuilder<S, T>().apply(builder).construct())
+fun <S> ArgumentBuilder<S, *>.path(builder: FrontArgumentBuilder<S>.() -> Unit) {
+    this.then(FrontArgumentBuilder<S>().apply(builder).construct())
 }

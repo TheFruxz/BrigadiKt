@@ -14,19 +14,19 @@ import dev.fruxz.brigadikt.domain.FrontArgumentBuilder
 import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
 
-private fun <S, T> FrontArgumentBuilder<S, T>.insertArgument(builder: () -> ActiveCommandArgument<S, T>) =
+private fun <S, T> FrontArgumentBuilder<S>.insertArgument(builder: () -> ActiveCommandArgument<S, T>) =
     builder().also(this.arguments::add)
 
 // argument construction
 
-inline fun <S, reified T : Any> FrontArgumentBuilder<S, T>.customArgument(
+inline fun <S, reified T : Any> FrontArgumentBuilder<S>.customArgument(
     name: String,
     noinline argumentParser: (StringReader?) -> T,
     noinline argumentSuggestions: (CommandContext<*>, SuggestionsBuilder) -> CompletableFuture<Suggestions> = { _, _ -> Suggestions.empty() },
     noinline argumentExamples: () -> Collection<String> = { emptyList() },
 ): ActiveCommandArgument<S, T> = customArgument(name, T::class, argumentParser, argumentSuggestions, argumentExamples)
 
-fun <S, T> FrontArgumentBuilder<S, T>.customArgument(
+fun <S, T> FrontArgumentBuilder<S>.customArgument(
     name: String,
     argumentClass: KClass<T & Any>,
     argumentParser: (StringReader?) -> T,
@@ -48,12 +48,12 @@ fun <S, T> FrontArgumentBuilder<S, T>.customArgument(
 
 }, argumentClass)
 
-inline fun <S, reified T : Any> FrontArgumentBuilder<S, T>.customArgument(
+inline fun <S, reified T : Any> FrontArgumentBuilder<S>.customArgument(
     name: String,
     argumentType: ArgumentType<T>
 ): ActiveCommandArgument<S, T> = customArgument(name, argumentType, T::class)
 
-fun <S, T> FrontArgumentBuilder<S, T>.customArgument(
+fun <S, T> FrontArgumentBuilder<S>.customArgument(
     name: String,
     argumentType: ArgumentType<T>,
     argumentClass: KClass<T & Any>,
@@ -61,11 +61,11 @@ fun <S, T> FrontArgumentBuilder<S, T>.customArgument(
 
 // prepared custom-arguments
 
-inline fun <S, reified T : Any> FrontArgumentBuilder<S, T>.customArgument(
+inline fun <S, reified T : Any> FrontArgumentBuilder<S>.customArgument(
     argumentCommandNode: ArgumentCommandNode<S, T>,
 ): ActiveCommandArgument<S, T> = customArgument(argumentCommandNode, T::class)
 
-fun <S, T> FrontArgumentBuilder<S, T>.customArgument(
+fun <S, T> FrontArgumentBuilder<S>.customArgument(
     argumentCommandNode: ArgumentCommandNode<S, T>,
     argumentClass: KClass<T & Any>
 ): ActiveCommandArgument<S, T> = insertArgument {
@@ -77,7 +77,7 @@ fun <S, T> FrontArgumentBuilder<S, T>.customArgument(
 
 // Prepared stock-arguments
 
-fun <S> FrontArgumentBuilder<S, Int>.intArgument(
+fun <S> FrontArgumentBuilder<S>.intArgument(
     name: String,
     min: Int = Int.MIN_VALUE,
     max: Int = Int.MAX_VALUE,
@@ -86,7 +86,7 @@ fun <S> FrontArgumentBuilder<S, Int>.intArgument(
     nodeClass = Int::class,
 ).also(this.arguments::add)
 
-fun <S> FrontArgumentBuilder<S, String>.stringArgument(
+fun <S> FrontArgumentBuilder<S>.stringArgument(
     name: String,
 ): ActiveCommandArgument<S, String> = insertArgument {
     ActiveCommandArgument<S, String>(
@@ -95,7 +95,7 @@ fun <S> FrontArgumentBuilder<S, String>.stringArgument(
     )
 }
 
-fun <S> FrontArgumentBuilder<S, String>.greedyStringArgument(
+fun <S> FrontArgumentBuilder<S>.greedyStringArgument(
     name: String,
 ): ActiveCommandArgument<S, String> = insertArgument {
     ActiveCommandArgument<S, String>(
@@ -104,7 +104,7 @@ fun <S> FrontArgumentBuilder<S, String>.greedyStringArgument(
     )
 }
 
-fun <S> FrontArgumentBuilder<S, String>.wordStringArgument(
+fun <S> FrontArgumentBuilder<S>.wordStringArgument(
     name: String,
 ): ActiveCommandArgument<S, String> = insertArgument {
     ActiveCommandArgument<S, String>(

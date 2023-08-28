@@ -9,7 +9,7 @@ import com.mojang.brigadier.suggestion.SuggestionProvider
 import dev.fruxz.ascend.extension.forceCast
 import dev.fruxz.brigadikt.BrigadiktCommandContext
 
-data class FrontArgumentBuilder<S, T>(
+data class FrontArgumentBuilder<S>(
     val depth: Int = 0,
     var run: ((BrigadiktCommandContext<S>) -> Unit)? = null,
     val children: MutableSet<ArgumentBuilder<S, *>> = mutableSetOf(),
@@ -24,9 +24,7 @@ data class FrontArgumentBuilder<S, T>(
         if (this.arguments.lastIndex < depth) throw IllegalStateException("No arguments provided on depth $depth!")
 
         val overflow = this.arguments.lastIndex - depth
-        val base = arguments[depth].node.let { node ->
-            RequiredArgumentBuilder.argument<S, T>(node.name, node.type.forceCast<ArgumentType<T>>())
-        }
+        val base = arguments[depth].produce()
 
         if (overflow > 0) {
             base.then(
