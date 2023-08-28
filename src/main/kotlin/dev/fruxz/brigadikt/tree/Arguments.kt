@@ -1,4 +1,4 @@
-package dev.fruxz.brigadikt
+package dev.fruxz.brigadikt.tree
 
 import com.mojang.brigadier.StringReader
 import com.mojang.brigadier.arguments.ArgumentType

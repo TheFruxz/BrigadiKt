@@ -1,13 +1,12 @@
 plugins {
     kotlin("jvm") version "1.9.10"
     id("org.jetbrains.dokka") version "1.8.20"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
     `maven-publish`
 }
 
 val host = "github.com/TheFruxz/BrigadiKt"
 
-version = "2023.3-dev"
+version = "2023.3"
 group = "dev.fruxz"
 
 repositories {
@@ -38,10 +37,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
     // MoltenKt
-    implementation("com.github.TheFruxz:Ascend:2023.2")
-    implementation("com.github.TheFruxz:Stacked:2023.2b")
-
-    implementation("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
+    implementation("com.github.TheFruxz:Ascend:2023.3.2")
+    implementation("com.github.TheFruxz:Stacked:2023.3.1")
 
     // Brigadier
     api("com.mojang:brigadier:1.0.18")

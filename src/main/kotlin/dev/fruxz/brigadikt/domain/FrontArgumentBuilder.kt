@@ -1,30 +1,47 @@
 package dev.fruxz.brigadikt.domain
 
 import com.mojang.brigadier.Command
-import com.mojang.brigadier.arguments.ArgumentType
 import com.mojang.brigadier.builder.ArgumentBuilder
-import com.mojang.brigadier.builder.RequiredArgumentBuilder
-import com.mojang.brigadier.context.CommandContext
-import com.mojang.brigadier.suggestion.SuggestionProvider
-import dev.fruxz.ascend.extension.forceCast
-import dev.fruxz.brigadikt.BrigadiktCommandContext
+import dev.fruxz.brigadikt.activity.BrigadiktCommandContext
+import dev.fruxz.brigadikt.annotation.BrigadiktDSL
 
 data class FrontArgumentBuilder<S>(
     val depth: Int = 0,
     var run: ((BrigadiktCommandContext<S>) -> Unit)? = null,
+    val requirements: MutableList<((S) -> Boolean)?> = mutableListOf(),
     val children: MutableSet<ArgumentBuilder<S, *>> = mutableSetOf(),
     val arguments: MutableList<ActiveCommandArgument<S, *>> = mutableListOf(),
 ) {
 
-    fun executes(process: BrigadiktCommandContext<S>.() -> Unit) {
+    @BrigadiktDSL
+    fun executes(process: BrigadiktCommandContext<S>.() -> Unit) = apply {
         this.run = process
     }
+
+    @BrigadiktDSL
+    fun requires(override: Boolean = false, process: (S) -> Boolean) = apply {
+        if (override) requirements.clear()
+        requirements.add(process)
+    }
+
+    @Deprecated(level = DeprecationLevel.ERROR, message = "This method is not supported yet.")
+    fun redirect() = apply { TODO("This method is not supported yet.") }
+
+    @Deprecated(level = DeprecationLevel.ERROR, message = "This method is not supported yet.")
+    fun fork() = apply { TODO() }
+
+    @Deprecated(level = DeprecationLevel.ERROR, message = "This method is not supported yet.")
+    fun forward() = apply { TODO() }
 
     fun construct(): ArgumentBuilder<S, *> {
         if (this.arguments.lastIndex < depth) throw IllegalStateException("No arguments provided on depth $depth!")
 
         val overflow = this.arguments.lastIndex - depth
         val base = arguments[depth].produce()
+
+        base.requires { executor ->
+            return@requires requirements.all { it?.invoke(executor) ?: false }
+        }
 
         if (overflow > 0) {
             base.then(

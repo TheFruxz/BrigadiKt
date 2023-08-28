@@ -1,6 +1,0 @@
-name: Test
-version: 0
-main: dev.fruxz.brigadikt.TestPlugin
-commands:
-  testcommand:
-    description: Tested BrigadiKt

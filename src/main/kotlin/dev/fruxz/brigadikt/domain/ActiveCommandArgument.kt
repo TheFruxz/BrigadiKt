@@ -6,8 +6,8 @@ import dev.fruxz.ascend.tool.smart.composition.Producible
 import kotlin.reflect.KClass
 
 /**
- * A representation of a command argument, which can be
- * easily accessed from a command context.
+ * A representation of a required command argument, which
+ * can be easily accessed from a command context.
  * @author Fruxz
  * @since 2023.3
  */
