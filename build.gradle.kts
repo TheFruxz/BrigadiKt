@@ -21,10 +21,6 @@ repositories {
         name = "Minecraft Libraries"
     }
 
-    maven("https://repo.papermc.io/repository/maven-public/") {
-        name = "PaperMC"
-    }
-
 }
 
 dependencies {
@@ -33,12 +29,8 @@ dependencies {
     testImplementation(kotlin("test"))
     implementation(kotlin("reflect"))
 
-    // KotlinX
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-
     // MoltenKt
-    implementation("com.github.TheFruxz:Ascend:2023.3.2")
-    implementation("com.github.TheFruxz:Stacked:2023.3.1")
+    api("com.github.TheFruxz:Ascend:2023.3.3")
 
     // Brigadier
     api("com.mojang:brigadier:1.0.18")
@@ -65,18 +57,7 @@ val sourceJar by tasks.register<Jar>("sourceJar") {
 publishing {
 
     repositories {
-
         mavenLocal()
-
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.$host")
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-
     }
 
     publications.create("BrigadiKt", MavenPublication::class) {
