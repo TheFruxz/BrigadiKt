@@ -1,71 +1,42 @@
 package dev.fruxz.brigadikt.tree
 
 import com.mojang.brigadier.StringReader
-import com.mojang.brigadier.arguments.ArgumentType
-import com.mojang.brigadier.arguments.IntegerArgumentType
-import com.mojang.brigadier.arguments.StringArgumentType
+import com.mojang.brigadier.arguments.*
+import com.mojang.brigadier.arguments.StringArgumentType.StringType
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.context.CommandContext
+import com.mojang.brigadier.exceptions.CommandSyntaxException
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType
 import com.mojang.brigadier.suggestion.Suggestions
 import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import com.mojang.brigadier.tree.ArgumentCommandNode
+import dev.fruxz.brigadikt.annotation.ExperimentalBrigadiktAPI
 import dev.fruxz.brigadikt.domain.ActiveCommandArgument
 import dev.fruxz.brigadikt.domain.FrontArgumentBuilder
 import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
 
-private fun <S, T> FrontArgumentBuilder<S>.insertArgument(builder: () -> ActiveCommandArgument<S, T>) =
+fun <S, T> FrontArgumentBuilder<S>.insertArgument(builder: () -> ActiveCommandArgument<S, T>) =
     builder().also(this.arguments::add)
 
-// argument construction
+// general
 
-inline fun <S, reified T : Any> FrontArgumentBuilder<S>.customArgument(
+inline fun <S, reified T : Any> FrontArgumentBuilder<S>.argument(
     name: String,
-    noinline argumentParser: (StringReader?) -> T,
-    noinline argumentSuggestions: (CommandContext<*>, SuggestionsBuilder) -> CompletableFuture<Suggestions> = { _, _ -> Suggestions.empty() },
-    noinline argumentExamples: () -> Collection<String> = { emptyList() },
-): ActiveCommandArgument<S, T> = customArgument(name, T::class, argumentParser, argumentSuggestions, argumentExamples)
+    type: ArgumentType<T>,
+): ActiveCommandArgument<S, T> = argument(RequiredArgumentBuilder.argument<S, T>(name, type).build(), T::class)
 
-fun <S, T> FrontArgumentBuilder<S>.customArgument(
-    name: String,
-    argumentClass: KClass<T & Any>,
-    argumentParser: (StringReader?) -> T,
-    argumentSuggestions: (CommandContext<*>, SuggestionsBuilder) -> CompletableFuture<Suggestions> = { _, _ -> Suggestions.empty() },
-    argumentExamples: () -> Collection<String> = { emptyList() },
-): ActiveCommandArgument<S, T> = customArgument(name, object : ArgumentType<T> {
-
-    override fun parse(reader: StringReader?): T =
-        argumentParser(reader)
-
-    override fun <S : Any?> listSuggestions(
-        context: CommandContext<S>?,
-        builder: SuggestionsBuilder?
-    ): CompletableFuture<Suggestions> =
-        argumentSuggestions(context!!, builder!!)
-
-    override fun getExamples(): MutableCollection<String> =
-        argumentExamples().toMutableList()
-
-}, argumentClass)
-
-inline fun <S, reified T : Any> FrontArgumentBuilder<S>.customArgument(
-    name: String,
-    argumentType: ArgumentType<T>
-): ActiveCommandArgument<S, T> = customArgument(name, argumentType, T::class)
-
-fun <S, T> FrontArgumentBuilder<S>.customArgument(
+fun <S, T> FrontArgumentBuilder<S>.argument(
     name: String,
     argumentType: ArgumentType<T>,
     argumentClass: KClass<T & Any>,
-): ActiveCommandArgument<S, T> = customArgument(RequiredArgumentBuilder.argument<S, T>(name, argumentType).build(), argumentClass)
+): ActiveCommandArgument<S, T> = argument(RequiredArgumentBuilder.argument<S, T>(name, argumentType).build(), argumentClass)
 
-// prepared custom-arguments
-
-inline fun <S, reified T : Any> FrontArgumentBuilder<S>.customArgument(
+inline fun <S, reified T : Any> FrontArgumentBuilder<S>.argument(
     argumentCommandNode: ArgumentCommandNode<S, T>,
-): ActiveCommandArgument<S, T> = customArgument(argumentCommandNode, T::class)
+): ActiveCommandArgument<S, T> = argument(argumentCommandNode, T::class)
 
-fun <S, T> FrontArgumentBuilder<S>.customArgument(
+fun <S, T> FrontArgumentBuilder<S>.argument(
     argumentCommandNode: ArgumentCommandNode<S, T>,
     argumentClass: KClass<T & Any>
 ): ActiveCommandArgument<S, T> = insertArgument {
@@ -75,40 +46,104 @@ fun <S, T> FrontArgumentBuilder<S>.customArgument(
     )
 }
 
-// Prepared stock-arguments
+// string
 
-fun <S> FrontArgumentBuilder<S>.intArgument(
+fun <S> FrontArgumentBuilder<S>.argumentString(name: String) = argument(
+    name = name,
+    type = StringArgumentType.string()
+)
+
+fun <S> FrontArgumentBuilder<S>.argumentWord(name: String) = argument(
+    name = name,
+    type = StringArgumentType.word()
+)
+
+fun <S> FrontArgumentBuilder<S>.argumentGreedyString(name: String) = argument(
+    name = name,
+    type = StringArgumentType.greedyString()
+)
+
+@ExperimentalBrigadiktAPI
+fun <S> FrontArgumentBuilder<S>.argumentStringRegex(
+    name: String,
+    regex: Regex,
+    type: StringType = StringType.SINGLE_WORD,
+) = argument(
+    name = name,
+    type = when (type) {
+        StringType.SINGLE_WORD -> StringArgumentType.word()
+        StringType.QUOTABLE_PHRASE -> StringArgumentType.string()
+        StringType.GREEDY_PHRASE -> StringArgumentType.greedyString()
+    }.let { base ->
+        return@let object : ArgumentType<String> {
+
+            @Throws(CommandSyntaxException::class)
+            override fun parse(reader: StringReader): String {
+                val input = base.parse(reader)
+
+                when (regex.matches(input)) {
+                    true -> return input
+                    false -> throw CommandSyntaxException(SimpleCommandExceptionType { "Input does not match regex: $regex" }) { "Input does not match regex: $regex" }
+                }
+
+            }
+
+            override fun getExamples(): Collection<String> =
+                base.examples
+
+            override fun <S : Any?> listSuggestions(
+                context: CommandContext<S>,
+                builder: SuggestionsBuilder,
+            ): CompletableFuture<Suggestions> =
+                base.listSuggestions(context, builder)
+
+        }
+    }
+)
+
+// numbers
+
+fun <S> FrontArgumentBuilder<S>.argumentInteger(
     name: String,
     min: Int = Int.MIN_VALUE,
     max: Int = Int.MAX_VALUE,
-): ActiveCommandArgument<S, Int> = ActiveCommandArgument<S, Int>(
-    node = RequiredArgumentBuilder.argument<S, Int>(name, IntegerArgumentType.integer(min, max)).build(),
-    nodeClass = Int::class,
-).also(this.arguments::add)
+) = argument(
+    name = name,
+    type = IntegerArgumentType.integer(min, max)
+)
 
-fun <S> FrontArgumentBuilder<S>.stringArgument(
+fun <S> FrontArgumentBuilder<S>.argumentDouble(
     name: String,
-): ActiveCommandArgument<S, String> = insertArgument {
-    ActiveCommandArgument<S, String>(
-        node = RequiredArgumentBuilder.argument<S, String>(name, StringArgumentType.string()).build(),
-        nodeClass = String::class,
-    )
-}
+    min: Double = Double.MIN_VALUE,
+    max: Double = Double.MAX_VALUE,
+) = argument(
+    name = name,
+    type = DoubleArgumentType.doubleArg(min, max)
+)
 
-fun <S> FrontArgumentBuilder<S>.greedyStringArgument(
+fun <S> FrontArgumentBuilder<S>.argumentFloat(
     name: String,
-): ActiveCommandArgument<S, String> = insertArgument {
-    ActiveCommandArgument<S, String>(
-        node = RequiredArgumentBuilder.argument<S, String>(name, StringArgumentType.greedyString()).build(),
-        nodeClass = String::class,
-    )
-}
+    min: Float = Float.MIN_VALUE,
+    max: Float = Float.MAX_VALUE,
+) = argument(
+    name = name,
+    type = FloatArgumentType.floatArg(min, max)
+)
 
-fun <S> FrontArgumentBuilder<S>.wordStringArgument(
+fun <S> FrontArgumentBuilder<S>.argumentLong(
     name: String,
-): ActiveCommandArgument<S, String> = insertArgument {
-    ActiveCommandArgument<S, String>(
-        node = RequiredArgumentBuilder.argument<S, String>(name, StringArgumentType.word()).build(),
-        nodeClass = String::class,
-    )
-}
+    min: Long = Long.MIN_VALUE,
+    max: Long = Long.MAX_VALUE,
+) = argument(
+    name = name,
+    type = LongArgumentType.longArg(min, max)
+)
+
+// bool
+
+fun <S> FrontArgumentBuilder<S>.argumentBool(
+    name: String,
+) = argument(
+    name = name,
+    type = BoolArgumentType.bool()
+)
