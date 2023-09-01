@@ -61,7 +61,7 @@ publishing {
     }
 
     publications.create("BrigadiKt", MavenPublication::class) {
-        artifactId = "brigadikt"
+        artifactId = name.lowercase()
         version = version.lowercase()
 
         artifact(dokkaJavadocJar)
