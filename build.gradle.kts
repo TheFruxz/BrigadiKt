@@ -67,6 +67,10 @@ tasks {
         useJUnitPlatform()
     }
 
+    publish {
+        dependsOn("sourcesJar")
+    }
+
 }
 
 kotlin {
