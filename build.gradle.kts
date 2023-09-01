@@ -67,8 +67,8 @@ tasks {
         useJUnitPlatform()
     }
 
-    publish {
-        dependsOn("sourcesJar")
+    named("publishBrigadiKtPublicationToMavenLocal") {
+        dependsOn(":sourcesJar")
     }
 
 }
