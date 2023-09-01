@@ -1,6 +1,5 @@
 plugins {
     kotlin("jvm") version "1.9.10"
-    id("org.jetbrains.dokka") version "1.9.0"
     `maven-publish`
 }
 
@@ -37,18 +36,6 @@ dependencies {
 
 }
 
-val dokkaHtmlJar by tasks.register<Jar>("dokkaHtmlJar") {
-    dependsOn(tasks.dokkaHtml)
-    from(tasks.dokkaHtml.flatMap { it.outputDirectory })
-    archiveClassifier.set("html-docs")
-}
-
-val dokkaJavadocJar by tasks.register<Jar>("dokkaJavadocJar") {
-    dependsOn(tasks.dokkaJavadoc)
-    from(tasks.dokkaJavadoc.flatMap { it.outputDirectory })
-    archiveClassifier.set("javadoc")
-}
-
 val sourceJar by tasks.register<Jar>("sourceJar") {
     archiveClassifier.set("sources")
     from(sourceSets.main.get().allSource)
@@ -64,8 +51,6 @@ publishing {
         artifactId = name.lowercase()
         version = version.lowercase()
 
-        artifact(dokkaJavadocJar)
-        artifact(dokkaHtmlJar)
         artifact(sourceJar) {
             classifier = "sources"
         }
@@ -80,10 +65,6 @@ tasks {
 
     test {
         useJUnitPlatform()
-    }
-
-    dokkaHtml.configure {
-        outputDirectory.set(layout.projectDirectory.dir("build"))
     }
 
 }
