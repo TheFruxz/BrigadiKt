@@ -1,7 +1,7 @@
 package dev.fruxz.brigadikt.tree
 
-import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
+import dev.fruxz.brigadikt.domain.FrontArgumentBuilder
 
 /**
  * This function builds a platform independent command, which can be used
@@ -10,5 +10,5 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder
  * @author Fruxz
  * @sample 2023.3
  */
-fun <S> buildUniversalCommand(name: String, builder: ArgumentBuilder<S, *>.() -> Unit): LiteralArgumentBuilder<S> =
-    LiteralArgumentBuilder.literal<S>(name).apply(builder)
+fun <S> buildUniversalCommand(name: String, builder: FrontArgumentBuilder<S>.() -> Unit): LiteralArgumentBuilder<S> =
+    FrontArgumentBuilder<S>().apply(builder).constructFoundation(name)

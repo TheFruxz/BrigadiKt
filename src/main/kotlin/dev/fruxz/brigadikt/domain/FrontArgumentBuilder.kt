@@ -2,6 +2,7 @@ package dev.fruxz.brigadikt.domain
 
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.builder.ArgumentBuilder
+import com.mojang.brigadier.builder.LiteralArgumentBuilder
 import dev.fruxz.brigadikt.activity.BrigadiktCommandContext
 import dev.fruxz.brigadikt.annotation.BrigadiktDSL
 
@@ -70,6 +71,40 @@ data class FrontArgumentBuilder<S>(
 
         return base
 
+    }
+
+    /**
+     * This function builds the entire command tree like the [construct] function,
+     * but it is produced on a [LiteralArgumentBuilder] foundation instead.
+     * This is useful, to create a command tree 100% in [FrontArgumentBuilder]s.
+     * @author Fruxz
+     * @since 2023.3
+     */
+    fun constructFoundation(name: String): LiteralArgumentBuilder<S> {
+        val base = LiteralArgumentBuilder.literal<S>(name)
+
+        base.requires { executor ->
+            return@requires requirements.all { it?.invoke(executor) ?: false }
+        }
+
+        children.forEach { child ->
+            base.then(child)
+        }
+
+        if (run != null) {
+            base.executes {
+
+                println("Preparing execute at level $depth with args ${base.arguments.joinToString { it.name }}")
+
+                // after preparing the context, run the command
+                run!!.invoke(BrigadiktCommandContext(it))
+
+                // do NOT reset the argument context, because every run indeed automatically receives its own context
+                return@executes Command.SINGLE_SUCCESS
+            }
+        }
+
+        return base
     }
 
 }
