@@ -29,10 +29,10 @@ data class FrontArgumentBuilder<S>(
     fun redirect() = apply { TODO("This method is not supported yet.") }
 
     @Deprecated(level = DeprecationLevel.ERROR, message = "This method is not supported yet.")
-    fun fork() = apply { TODO() }
+    fun fork() = apply { TODO("This method is not supported yet.") }
 
     @Deprecated(level = DeprecationLevel.ERROR, message = "This method is not supported yet.")
-    fun forward() = apply { TODO() }
+    fun forward() = apply { TODO("This method is not supported yet.") }
 
     fun construct(): ArgumentBuilder<S, *> {
         if (this.arguments.lastIndex < depth) throw IllegalStateException("No arguments provided on depth $depth!")
@@ -46,25 +46,19 @@ data class FrontArgumentBuilder<S>(
 
         if (overflow > 0) {
             base.then(
-                this
-                    .copy(depth = depth + 1) // increase the depth
+                this.copy(depth = depth + 1) // increase the depth
                     .construct()
             )
         }
 
-        children.forEach { child ->
-            base.then(child)
-        }
+        children.forEach(base::then)
 
         if (overflow == 0 && run != null) {
             base.executes {
 
-                println("Preparing execute at level $depth with args ${base.arguments.joinToString { it.name }}")
-
                 // after preparing the context, run the command
                 run!!.invoke(BrigadiktCommandContext(it))
 
-                // do NOT reset the argument context, because every run indeed automatically receives its own context
                 return@executes Command.SINGLE_SUCCESS
             }
         }
@@ -87,19 +81,14 @@ data class FrontArgumentBuilder<S>(
             return@requires requirements.all { it?.invoke(executor) ?: false }
         }
 
-        children.forEach { child ->
-            base.then(child)
-        }
+        children.forEach(base::then)
 
         if (run != null) {
             base.executes {
 
-                println("Preparing execute at level $depth with args ${base.arguments.joinToString { it.name }}")
-
                 // after preparing the context, run the command
                 run!!.invoke(BrigadiktCommandContext(it))
 
-                // do NOT reset the argument context, because every run indeed automatically receives its own context
                 return@executes Command.SINGLE_SUCCESS
             }
         }
