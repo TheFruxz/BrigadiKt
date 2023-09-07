@@ -38,7 +38,7 @@ data class BrigadiktCommandContext<S>(
      * @param type the type of the argument to retrieve
      * @return the value of the argument
      */
-    fun <T : Any> getArgument(name: String, type: KClass<T>) =
+    fun <T : Any> getArgument(name: String, type: KClass<T>): T =
         context.getArgument(name, type.java)
 
     /**
