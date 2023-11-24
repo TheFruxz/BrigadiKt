@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.9.10"
+    kotlin("jvm") version "1.9.21"
     `maven-publish`
 }
 
@@ -29,7 +29,7 @@ dependencies {
     implementation(kotlin("reflect"))
 
     // MoltenKt
-    api("com.github.TheFruxz:Ascend:2023.3.3")
+    api("com.github.TheFruxz:Ascend:2023.5.1")
 
     // Brigadier
     api("com.mojang:brigadier:1.0.18")

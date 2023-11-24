@@ -2,7 +2,7 @@ package dev.fruxz.brigadikt.domain
 
 import com.mojang.brigadier.builder.RequiredArgumentBuilder
 import com.mojang.brigadier.tree.ArgumentCommandNode
-import dev.fruxz.ascend.tool.smart.composition.Producible
+import dev.fruxz.ascend.tool.smart.generate.producible.Producible
 import kotlin.reflect.KClass
 
 /**
