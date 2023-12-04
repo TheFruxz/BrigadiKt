@@ -5,7 +5,7 @@ plugins {
 
 val host = "github.com/TheFruxz/BrigadiKt"
 
-version = "2023.3-RC4"
+version = "2023.3-RC5"
 group = "dev.fruxz"
 
 repositories {
