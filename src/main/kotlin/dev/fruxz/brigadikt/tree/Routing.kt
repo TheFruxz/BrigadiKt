@@ -16,6 +16,18 @@ fun <S> FrontArgumentBuilder<S>.route(builder: FrontArgumentBuilder<S>.() -> Uni
 }
 
 /**
+ * Adds a path with a predefined literal to the current command construction
+ * @param S The type of the command sender
+ * @param literal the routes literal
+ * @author Fruxz
+ * @since 2023.3
+ */
+@BrigadiktDSL
+fun <S> FrontArgumentBuilder<S>.route(literal: String, builder: FrontArgumentBuilder<S>.() -> Unit) {
+    this.children.add(FrontArgumentBuilder<S>().apply(builder).constructFoundation(literal))
+}
+
+/**
  * Adds a path to the current command construction
  * @param S The type of the command sender
  * @author Fruxz
@@ -24,4 +36,16 @@ fun <S> FrontArgumentBuilder<S>.route(builder: FrontArgumentBuilder<S>.() -> Uni
 @BrigadiktDSL
 fun <S> ArgumentBuilder<S, *>.route(builder: FrontArgumentBuilder<S>.() -> Unit) {
     this.then(FrontArgumentBuilder<S>().apply(builder).construct())
+}
+
+/**
+ * Adds a path with a predefined literal to the current command construction
+ * @param S The type of the command sender
+ * @param literal the routes literal
+ * @author Fruxz
+ * @since 2023.3
+ */
+@BrigadiktDSL
+fun <S> ArgumentBuilder<S, *>.route(literal: String, builder: FrontArgumentBuilder<S>.() -> Unit) {
+    this.then(FrontArgumentBuilder<S>().apply(builder).constructFoundation(literal))
 }
