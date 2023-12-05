@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "1.9.21"
+    id("co.uzzu.dotenv.gradle") version "3.0.0"
     `maven-publish`
 }
 
@@ -11,6 +12,10 @@ group = "dev.fruxz"
 repositories {
 
     mavenCentral()
+
+    maven("https://distribution.fruxz.dev/") {
+        name = "fruxz.dev"
+    }
 
     maven("https://jitpack.io") {
         name = "JitPack"
@@ -44,7 +49,13 @@ val sourceJar by tasks.register<Jar>("sourceJar") {
 publishing {
 
     repositories {
-        mavenLocal()
+        maven("https://repo.fruxz.dev/releases") {
+            name = "fruxz.dev"
+            credentials {
+                username = env.PUBLISH_USERNAME.orNull()
+                password = env.PUBLISH_PASSWORD.orNull()
+            }
+        }
     }
 
     publications.create("BrigadiKt", MavenPublication::class) {
