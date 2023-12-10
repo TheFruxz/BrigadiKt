@@ -1,24 +1,20 @@
 plugins {
     kotlin("jvm") version "1.9.21"
-    id("co.uzzu.dotenv.gradle") version "3.0.0"
+    id("org.jetbrains.dokka") version "1.9.10"
     `maven-publish`
 }
 
 val host = "github.com/TheFruxz/BrigadiKt"
 
-version = "2023.3-RC5"
+version = "2023.4"
 group = "dev.fruxz"
 
 repositories {
 
     mavenCentral()
 
-    maven("https://distribution.fruxz.dev/") {
+    maven("https://repo.fruxz.dev/releases") {
         name = "fruxz.dev"
-    }
-
-    maven("https://jitpack.io") {
-        name = "JitPack"
     }
 
     maven("https://libraries.minecraft.net") {
@@ -34,11 +30,23 @@ dependencies {
     implementation(kotlin("reflect"))
 
     // MoltenKt
-    api("com.github.TheFruxz:Ascend:2023.5.1")
+    api("dev.fruxz:ascend:2023.5.2")
 
     // Brigadier
     api("com.mojang:brigadier:1.0.18")
 
+}
+
+val dokkaHtmlJar by tasks.register<Jar>("dokkaHtmlJar") {
+    dependsOn(tasks.dokkaHtml)
+    from(tasks.dokkaHtml.flatMap { it.outputDirectory })
+    archiveClassifier.set("html-docs")
+}
+
+val dokkaJavadocJar by tasks.register<Jar>("dokkaJavadocJar") {
+    dependsOn(tasks.dokkaJavadoc)
+    from(tasks.dokkaJavadoc.flatMap { it.outputDirectory })
+    archiveClassifier.set("javadoc")
 }
 
 val sourceJar by tasks.register<Jar>("sourceJar") {
@@ -52,8 +60,8 @@ publishing {
         maven("https://repo.fruxz.dev/releases") {
             name = "fruxz.dev"
             credentials {
-                username = env.PUBLISH_USERNAME.orNull()
-                password = env.PUBLISH_PASSWORD.orNull()
+                username = project.findProperty("fruxz.dev.user") as? String? ?: System.getenv("FRUXZ_DEV_USER")
+                password = project.findProperty("fruxz.dev.secret") as? String? ?: System.getenv("FRUXZ_DEV_SECRET")
             }
         }
     }
@@ -62,6 +70,8 @@ publishing {
         artifactId = name.lowercase()
         version = version.lowercase()
 
+        artifact(dokkaJavadocJar)
+        artifact(dokkaHtmlJar)
         artifact(sourceJar) {
             classifier = "sources"
         }
@@ -78,8 +88,8 @@ tasks {
         useJUnitPlatform()
     }
 
-    named("publishBrigadiKtPublicationToMavenLocal") {
-        dependsOn(":sourcesJar")
+    dokkaHtml.configure {
+        outputDirectory.set(layout.projectDirectory.dir("docs"))
     }
 
 }
