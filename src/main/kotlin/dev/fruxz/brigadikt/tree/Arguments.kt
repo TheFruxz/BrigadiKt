@@ -12,9 +12,13 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import com.mojang.brigadier.tree.ArgumentCommandNode
 import dev.fruxz.brigadikt.annotation.ExperimentalBrigadiktAPI
 import dev.fruxz.brigadikt.domain.ActiveCommandArgument
+import dev.fruxz.brigadikt.domain.ArgumentTypeBuilder
 import dev.fruxz.brigadikt.domain.FrontArgumentBuilder
 import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
+
+fun <S, T> buildUniversalArgumentType(builder: ArgumentTypeBuilder<T, S>.() -> Unit): ArgumentType<T> =
+    ArgumentTypeBuilder<T, S>().apply(builder).produce()
 
 fun <S, T> FrontArgumentBuilder<S>.insertArgument(builder: () -> ActiveCommandArgument<S, T>) =
     builder().also(this.arguments::add)
@@ -45,6 +49,73 @@ fun <S, T> FrontArgumentBuilder<S>.argument(
         nodeClass = argumentClass,
     )
 }
+
+// static
+
+inline fun <S, reified T : Any> FrontArgumentBuilder<S>.argumentStatic(
+    name: String,
+    value: T,
+    crossinline stringify: (T) -> String = { it.toString() },
+) = argument<S, T>(
+    name = name,
+    type = buildUniversalArgumentType<S, T> {
+        suggest { _, builder -> builder.suggest(stringify(value)).buildFuture() }
+        parse { reader ->
+            val static = stringify(value)
+            val input = reader.readString()
+
+            if (input != static) throw SimpleCommandExceptionType { "Only '$static' is possible here!" }.createWithContext(reader)
+
+            return@parse value
+        }
+    }
+)
+
+inline fun <S, reified T : Any> FrontArgumentBuilder<S>.argumentListEntry(
+    name: String,
+    value: Iterable<T>,
+    crossinline stringify: (T) -> String = { it.toString() },
+) = argument<S, T>(
+    name = name,
+    type = buildUniversalArgumentType<S, T> {
+        suggest { _, builder ->
+            value.forEach { builder.suggest(stringify(it)) }
+            builder.buildFuture()
+        }
+        parse { reader ->
+            val input = reader.readString()
+
+            value.forEach { entry ->
+                if (input == stringify(entry)) return@parse entry
+            }
+
+            throw SimpleCommandExceptionType { "Only one of ${value.joinToString { stringify(it) }} is possible here!" }.createWithContext(reader)
+        }
+    }
+)
+
+fun <S, T> FrontArgumentBuilder<S>.argumentListIndex(
+    name: String,
+    value: Iterable<T>,
+    stringify: (T) -> String = { it.toString() },
+) = argument<S, Int>(
+    name = name,
+    type = buildUniversalArgumentType<S, Int> {
+        suggest { _, builder ->
+            value.forEach { builder.suggest(stringify(it)) }
+            builder.buildFuture()
+        }
+        parse { reader ->
+            val input = reader.readString()
+
+            value.withIndex().forEach { (index, entry) ->
+                if (input == stringify(entry)) return@parse index
+            }
+
+            throw SimpleCommandExceptionType { "Only one of ${value.joinToString { stringify(it) }} is possible here!" }.createWithContext(reader)
+        }
+    }
+)
 
 // string
 
