@@ -24,7 +24,7 @@ fun <S> FrontArgumentBuilder<S>.route(builder: FrontArgumentBuilder<S>.() -> Uni
  */
 @BrigadiktDSL
 fun <S> FrontArgumentBuilder<S>.route(literal: String, builder: FrontArgumentBuilder<S>.() -> Unit) {
-    this.children.add(FrontArgumentBuilder<S>().apply(builder).constructFoundation(literal))
+    this.children.add(FrontArgumentBuilder<S>().apply(builder).constructOnLiteral(literal))
 }
 
 /**
@@ -47,5 +47,5 @@ fun <S> ArgumentBuilder<S, *>.route(builder: FrontArgumentBuilder<S>.() -> Unit)
  */
 @BrigadiktDSL
 fun <S> ArgumentBuilder<S, *>.route(literal: String, builder: FrontArgumentBuilder<S>.() -> Unit) {
-    this.then(FrontArgumentBuilder<S>().apply(builder).constructFoundation(literal))
+    this.then(FrontArgumentBuilder<S>().apply(builder).constructOnLiteral(literal))
 }
