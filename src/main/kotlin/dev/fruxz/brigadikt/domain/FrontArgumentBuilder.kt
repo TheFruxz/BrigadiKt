@@ -3,12 +3,10 @@ package dev.fruxz.brigadikt.domain
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
-import dev.fruxz.ascend.extension.data.TagPrefix
 import dev.fruxz.ascend.extension.data.generateRandomTag
 import dev.fruxz.brigadikt.activity.BrigadiktCommandContext
 import dev.fruxz.brigadikt.annotation.BrigadiktDSL
 import dev.fruxz.brigadikt.tree.argumentStatic
-import dev.fruxz.brigadikt.tree.insertArgument
 
 data class FrontArgumentBuilder<S>(
     val depth: Int = 0,
@@ -73,7 +71,9 @@ data class FrontArgumentBuilder<S>(
     fun constructOnLiteral(literal: String): ArgumentBuilder<S, *> =
         this
             .copy()
-            .apply { this.insertArgument { argumentStatic(generateRandomTag(prefix = TagPrefix("")), literal) } }
+            .apply {
+                this.arguments.add(0, argumentStatic(generateRandomTag(), literal))
+            }
             .construct()
 
     /**
