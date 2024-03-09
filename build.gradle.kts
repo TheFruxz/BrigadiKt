@@ -30,7 +30,7 @@ dependencies {
     implementation(kotlin("reflect"))
 
     // MoltenKt
-    api("dev.fruxz:ascend:2023.5.2")
+    api("dev.fruxz:ascend:2024.1.1")
 
     // Brigadier
     api("com.mojang:brigadier:1.0.18")
