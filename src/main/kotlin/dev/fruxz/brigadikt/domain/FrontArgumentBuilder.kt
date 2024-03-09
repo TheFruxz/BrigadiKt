@@ -3,7 +3,7 @@ package dev.fruxz.brigadikt.domain
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.builder.ArgumentBuilder
 import com.mojang.brigadier.builder.LiteralArgumentBuilder
-import dev.fruxz.ascend.extension.data.generateRandomTag
+import dev.fruxz.ascend.extension.data.randomTag
 import dev.fruxz.brigadikt.activity.BrigadiktCommandContext
 import dev.fruxz.brigadikt.annotation.BrigadiktDSL
 import dev.fruxz.brigadikt.tree.argumentStatic
@@ -72,7 +72,7 @@ data class FrontArgumentBuilder<S>(
         this
             .copy()
             .apply {
-                this.arguments.add(0, argumentStatic(generateRandomTag(), literal))
+                this.arguments.add(0, argumentStatic(randomTag(), literal))
             }
             .construct()
 
