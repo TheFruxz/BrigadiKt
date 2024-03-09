@@ -57,7 +57,7 @@ val sourceJar by tasks.register<Jar>("sourceJar") {
 publishing {
 
     repositories {
-        maven("https://repo.fruxz.dev/dev") {
+        maven("https://repo.fruxz.dev/releases") {
             name = "fruxz.dev"
             credentials {
                 username = project.findProperty("fruxz.dev.user") as? String? ?: System.getenv("FRUXZ_DEV_USER")
