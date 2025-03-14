@@ -1,18 +1,22 @@
+@file:Suppress("UnstableApiUsage")
+
 package dev.fruxz.brigadikt
 
+import dev.fruxz.ascend.extension.objects.takeIfInstance
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
 import com.mojang.brigadier.builder.ArgumentBuilder as BrigadierBuilderArgumentBuilder
+import com.mojang.brigadier.builder.LiteralArgumentBuilder as BrigadierBuilderLiteralArgumentBuilder
 
 typealias PaperArgBuilder = BrigadierBuilderArgumentBuilder<CommandSourceStack, out BrigadierBuilderArgumentBuilder<CommandSourceStack, *>>
 
 // v2 attempt
 object CommandFactory {
 
-    fun render(commandBranch: CommandBranch): com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> {
+    fun render(commandBranch: CommandBranch): BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack> {
         val raw = Commands.literal(commandBranch.name)
 
-        return populate(raw, commandBranch, commandBranch.arguments) as com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack>
+        return populate(raw, commandBranch, commandBranch.arguments).takeIfInstance<BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack>>() ?: throw IllegalStateException("Failed to render command")
     }
 
     fun populate(raw: PaperArgBuilder, branch: Branch, queuedArguments: List<ArgumentBuilder<*, *>>): PaperArgBuilder {

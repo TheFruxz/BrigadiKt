@@ -100,7 +100,8 @@ open class MutableBranch(
     }
 
     fun branch(literal: String, builder: MutableBranch.() -> Unit) {
-        MutableBranch().apply(builder).also { children.add(it) } // TODO literal missing
+        MutableBranch(arguments = mutableListOf(LiteralArgumentBuilder(literal)))
+            .apply(builder).also(children::add)
     }
 
     // arguments - literal
