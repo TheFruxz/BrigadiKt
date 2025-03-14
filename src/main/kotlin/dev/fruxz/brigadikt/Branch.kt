@@ -24,9 +24,10 @@ abstract class CommandContext(
     val sender = raw.source.sender
     val isPlayer = sender is Player
 
-    operator fun <T : Any, R : Any> Argument<T, R>.invoke(): R {
-        return this.resolve(this@CommandContext) // TODO cache missing
-    }
+    operator fun <T : Any, R : Any> get(argument: Argument<T, R>) = argument.resolve(this) // TODO cache missing
+
+    operator fun <T : Any, R : Any> Argument<T, R>.invoke(): R =
+        this@CommandContext[this]
 
     // state modification
     abstract fun state(state: Int, process: () -> Unit = { })
@@ -52,6 +53,27 @@ interface Branch {
     val requirements: List<CommandContext.() -> Boolean>
     val children: List<Branch>
     val execution: (CommandContext.() -> Unit)?
+
+    fun toMutable(): MutableBranch {
+        return MutableBranch(arguments.toMutableList(), requirements.toMutableList(), children.toMutableList(), execution)
+    }
+
+    companion object {
+
+        operator fun invoke(
+            arguments: List<ArgumentBuilder<out Any, out Any>> = emptyList(),
+            requirements: List<CommandContext.() -> Boolean> = emptyList(),
+            children: List<Branch> = emptyList(),
+            execution: (CommandContext.() -> Unit)? = null
+        ) = object : Branch {
+            override val arguments = arguments
+            override val requirements = requirements
+            override val children = children
+            override val execution = execution
+        }
+
+    }
+
 }
 
 open class MutableBranch(
@@ -62,7 +84,7 @@ open class MutableBranch(
 ) : Branch {
 
     fun execute(execution: CommandContext.() -> Unit) {
-
+        this.execution = execution
     }
 
     // requirements
