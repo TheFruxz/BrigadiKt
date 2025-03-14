@@ -50,7 +50,7 @@ abstract class CommandContext(
 
 interface Branch {
     val arguments: List<ArgumentBuilder<out Any, out Any>>
-    val requirements: List<CommandContext.() -> Boolean>
+    val requirements: List<CommandSourceStack.() -> Boolean>
     val children: List<Branch>
     val execution: (CommandContext.() -> Unit)?
 
@@ -62,7 +62,7 @@ interface Branch {
 
         operator fun invoke(
             arguments: List<ArgumentBuilder<out Any, out Any>> = emptyList(),
-            requirements: List<CommandContext.() -> Boolean> = emptyList(),
+            requirements: List<CommandSourceStack.() -> Boolean> = emptyList(),
             children: List<Branch> = emptyList(),
             execution: (CommandContext.() -> Unit)? = null
         ) = object : Branch {
@@ -78,7 +78,7 @@ interface Branch {
 
 open class MutableBranch(
     override val arguments: MutableList<ArgumentBuilder<out Any, out Any>> = mutableListOf(),
-    override val requirements: MutableList<CommandContext.() -> Boolean> = mutableListOf(),
+    override val requirements: MutableList<CommandSourceStack.() -> Boolean> = mutableListOf(),
     override val children: MutableList<Branch> = mutableListOf(),
     override var execution: (CommandContext.() -> Unit)? = null
 ) : Branch {
@@ -89,7 +89,7 @@ open class MutableBranch(
 
     // requirements
 
-    fun requires(requirement: CommandContext.() -> Boolean) {
+    fun requires(requirement: CommandSourceStack.() -> Boolean) {
         requirements.add(requirement)
     }
 
@@ -141,7 +141,7 @@ data class CommandBranch(
     var description: String = "",
     val aliases: MutableList<String> = mutableListOf(),
     override val arguments: MutableList<ArgumentBuilder<out Any, out Any>> = mutableListOf(),
-    override val requirements: MutableList<CommandContext.() -> Boolean> = mutableListOf(),
+    override val requirements: MutableList<CommandSourceStack.() -> Boolean> = mutableListOf(),
     override val children: MutableList<Branch> = mutableListOf(),
     override var execution: (CommandContext.() -> Unit)? = { },
 ) : MutableBranch(arguments.toMutableList(), requirements.toMutableList(), children.toMutableList(), execution) {

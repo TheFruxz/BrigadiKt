@@ -16,6 +16,14 @@ object CommandFactory {
     }
 
     fun populate(raw: PaperArgBuilder, branch: Branch, queuedArguments: List<ArgumentBuilder<*, *>>): PaperArgBuilder {
+
+        if (branch.requirements.isNotEmpty()) {
+            raw.requires { context ->
+                println("Checking requirements for ${branch}")
+                branch.requirements.all { it.invoke(context) }
+            }
+        }
+
         when (queuedArguments.size) {
             0 -> {
                 throw IllegalStateException("No more arguments to populate")
@@ -25,6 +33,13 @@ object CommandFactory {
                     is LiteralArgumentBuilder -> Commands.literal(argument.literal)
                     is VariableArgumentBuilder<*> -> Commands.argument(argument.name, argument.instruction.raw)
                     is ResolvableArgumentBuilder<*, *> -> Commands.argument(argument.name, argument.instruction.raw)
+                }
+
+                val children = branch.children
+                if (children.isNotEmpty()) {
+                    children.forEach { child ->
+                        populate(path, child, child.arguments)
+                    }
                 }
 
                 val execution = branch.execution
