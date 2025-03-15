@@ -44,8 +44,16 @@ abstract class CommandContext(
 
     // state modification
     @BrigadiKtDSL abstract fun state(state: Int, process: () -> Unit = { })
+    @BrigadiKtDSL fun state(state: Int, message: ComponentLike) = state(state) { reply(message) }
+    @BrigadiKtDSL fun state(state: Int, @StyledString message: String) = state(state, message.asStyledComponent)
+
     @BrigadiKtDSL fun fail(process: () -> Unit = { }) = state(0, process)
+    @BrigadiKtDSL fun fail(message: ComponentLike) = state(0, message)
+    @BrigadiKtDSL fun fail(@StyledString message: String) = state(0, message)
+
     @BrigadiKtDSL fun success(process: () -> Unit = { }) = state(Command.SINGLE_SUCCESS, process)
+    @BrigadiKtDSL fun success(message: ComponentLike) = state(Command.SINGLE_SUCCESS, message)
+    @BrigadiKtDSL fun success(@StyledString message: String) = state(Command.SINGLE_SUCCESS, message)
 
     @BrigadiKtDSL
     fun reply(@StyledString message: String) {
