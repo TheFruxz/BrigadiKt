@@ -63,14 +63,15 @@ open class MutableBranch(
     }
 
     @BrigadiKtDSL
-    fun branch(literal: String, builder: MutableBranch.() -> Unit) {
-        MutableBranch(arguments = mutableListOf(LiteralArgumentProvider(literal)))
+    fun branch(vararg literals: String, builder: MutableBranch.() -> Unit) {
+        MutableBranch(arguments = literals.map { LiteralArgumentProvider(it) }.toMutableList())
             .apply(builder).also(children::add)
     }
 
     // arguments - literal
 
     @BrigadiKtDSL
+    @Deprecated(level = DeprecationLevel.ERROR, message = "Use branch parameters instead")
     fun literal(literal: String): LiteralArgumentProvider {
         return LiteralArgumentProvider(literal).also(arguments::add)
     }
