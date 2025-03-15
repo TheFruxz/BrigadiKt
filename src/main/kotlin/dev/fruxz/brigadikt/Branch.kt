@@ -68,14 +68,6 @@ open class MutableBranch(
             .apply(builder).also(children::add)
     }
 
-    // arguments - literal
-
-    @BrigadiKtDSL
-    @Deprecated(level = DeprecationLevel.ERROR, message = "Use branch parameters instead")
-    fun literal(literal: String): LiteralArgumentProvider {
-        return LiteralArgumentProvider(literal).also(arguments::add)
-    }
-
     // arguments - argument
 
     @BrigadiKtDSL
@@ -87,25 +79,17 @@ open class MutableBranch(
     inline fun <reified T : Any> argument(type: ArgumentType<T>, name: String? = null): VariableArgumentProvider<T> =
         argument(type, T::class, name)
 
-    @BrigadiKtDSL
-    inline fun <reified T : ArgumentType<I>, reified I : Any> argument(name: String? = null): VariableArgumentProvider<I> {
-        return argument(T::class.primaryConstructor?.call() ?: throw IllegalArgumentException("Supplied ArgumentType has no valid primary constructor - ${I::class.qualifiedName}"), I::class, name)
-    }
 
     // arguments - resolvable argument
 
     @BrigadiKtDSL
-    fun <T : ArgumentResolver<R>, R : Any> resolvable(type: ArgumentType<T>, clazz: KClass<T>, name: String? = null): ResolvableArgumentProvider<T, R> {
+    fun <T : ArgumentResolver<R>, R : Any> argument(type: ArgumentType<T>, clazz: KClass<T>, name: String? = null): ResolvableArgumentProvider<T, R> {
         return ResolvableArgumentProvider(name, VariableArgumentInstruction(type, clazz)).also(arguments::add)
     }
 
     @BrigadiKtDSL
-    inline fun <reified T : ArgumentResolver<R>, reified R : Any> resolvable(type: ArgumentType<T>, name: String? = null): ResolvableArgumentProvider<T, R> =
-        resolvable(type, T::class, name)
-
-    @BrigadiKtDSL
-    inline fun <reified I : ArgumentType<T>, reified T : ArgumentResolver<R>, reified R : Any> resolvable(name: String? = null): ResolvableArgumentProvider<T, R> =
-        resolvable(I::class.primaryConstructor?.call() ?: throw IllegalArgumentException("Supplied ArgumentType has no valid primary constructor - ${I::class.qualifiedName}"), T::class, name)
+    inline fun <reified T : ArgumentResolver<R>, reified R : Any> argument(type: ArgumentType<T>, name: String? = null): ResolvableArgumentProvider<T, R> =
+        argument(type, T::class, name)
 
 }
 
