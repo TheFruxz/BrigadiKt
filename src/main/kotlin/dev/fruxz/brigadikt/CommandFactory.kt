@@ -13,18 +13,17 @@ typealias PaperArgBuilder = BrigadierBuilderArgumentBuilder<CommandSourceStack, 
 // v2 attempt
 object CommandFactory {
 
-    fun render(commandBranch: CommandBranch): BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack> {
+    fun renderCommand(commandBranch: CommandBranch): BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack> {
         val raw = Commands.literal(commandBranch.name)
 
-        return populate(raw, commandBranch, commandBranch.arguments).takeIfInstance<BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack>>() ?: throw IllegalStateException("Failed to render command")
+        return renderBranch(raw, commandBranch, commandBranch.arguments).takeIfInstance<BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack>>() ?: throw IllegalStateException("Failed to render command")
     }
 
-    fun populate(raw: PaperArgBuilder, branch: Branch, queuedArguments: List<ArgumentBuilder<*, *>>): PaperArgBuilder {
+    fun renderBranch(raw: PaperArgBuilder, branch: Branch, queuedArguments: List<ArgumentBuilder<*, *>>): PaperArgBuilder {
 
         if (branch.requirements.isNotEmpty()) {
             raw.requires { context ->
-                println("Checking requirements for ${branch}")
-                branch.requirements.all { it.invoke(context) }
+                branch.requirements.all { it.invoke(object : RequirementContext(context) {}) }
             }
         }
 
@@ -33,7 +32,7 @@ object CommandFactory {
                 val children = branch.children
                 if (children.isNotEmpty()) {
                     children.forEach { child ->
-                        populate(raw, child, child.arguments)
+                        renderBranch(raw, child, child.arguments)
                     }
                 } else {
                     throw IllegalStateException("Empty path, no queued arguments and no children")
@@ -43,15 +42,15 @@ object CommandFactory {
             }
             1 -> {
                 val path = when (val argument = queuedArguments.first()) {
-                    is LiteralArgumentBuilder -> Commands.literal(argument.literal)
-                    is VariableArgumentBuilder<*> -> Commands.argument(argument.name, argument.instruction.raw)
-                    is ResolvableArgumentBuilder<*, *> -> Commands.argument(argument.name, argument.instruction.raw)
+                    is LiteralArgumentProvider -> Commands.literal(argument.literal)
+                    is VariableArgumentProvider<*> -> Commands.argument(argument.name, argument.instruction.raw)
+                    is ResolvableArgumentProvider<*, *> -> Commands.argument(argument.name, argument.instruction.raw)
                 }
 
                 val children = branch.children
                 if (children.isNotEmpty()) {
                     children.forEach { child ->
-                        populate(path, child, child.arguments)
+                        renderBranch(path, child, child.arguments)
                     }
                 }
 
@@ -62,7 +61,7 @@ object CommandFactory {
                         var resultState = 0
                         execution.invoke(object : CommandContext(
                             context,
-                            emptyMap()
+                            mutableMapOf()
                         ) {
                             override fun state(state: Int, process: () -> Unit) {
                                 resultState = state
@@ -79,13 +78,13 @@ object CommandFactory {
                 val argument = queuedArguments.first()
 
                 val producedBranch = when (argument) {
-                    is LiteralArgumentBuilder -> Commands.literal(argument.literal)
-                    is VariableArgumentBuilder<*> -> Commands.argument(argument.name, argument.instruction.raw)
-                    is ResolvableArgumentBuilder<*, *> -> Commands.argument(argument.name, argument.instruction.raw)
+                    is LiteralArgumentProvider -> Commands.literal(argument.literal)
+                    is VariableArgumentProvider<*> -> Commands.argument(argument.name, argument.instruction.raw)
+                    is ResolvableArgumentProvider<*, *> -> Commands.argument(argument.name, argument.instruction.raw)
                 }
 
                 return raw.then(
-                    populate(producedBranch, branch, queuedArguments.drop(1))
+                    renderBranch(producedBranch, branch, queuedArguments.drop(1))
                 )
             }
         }

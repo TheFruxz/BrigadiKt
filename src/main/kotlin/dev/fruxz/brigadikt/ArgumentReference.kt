@@ -3,28 +3,32 @@
 package dev.fruxz.brigadikt
 
 import com.mojang.brigadier.arguments.ArgumentType
+import dev.fruxz.ascend.extension.data.randomTag
 import dev.fruxz.ascend.extension.forceCastOrNull
 import io.papermc.paper.command.brigadier.argument.resolvers.ArgumentResolver
 import kotlin.reflect.KClass
-import kotlin.reflect.full.primaryConstructor
 
-sealed interface Argument<T : Any, R : Any> {
+sealed interface ArgumentReference<T : Any, R : Any> {
+
+    val name: String
 
     fun resolve(context: CommandContext): R
 
     companion object {
 
-        fun literal(literal: String) = LiteralArgument(literal)
+        fun literal(literal: String) = LiteralArgumentReference(literal)
 
-        fun <T : Any> variable(name: String, raw: ArgumentType<T>, clazz: KClass<T>) = VariableArgument(name, raw, clazz)
+        fun <T : Any> variable(name: String, raw: ArgumentType<T>, clazz: KClass<T>) = VariableArgumentReference(name, raw, clazz)
 
-        fun <T : ArgumentResolver<R>, R : Any> resolvable(name: String, raw: ArgumentType<out T>, clazz: KClass<out T>) = ResolvableArgument(name, raw, clazz)
+        fun <T : ArgumentResolver<R>, R : Any> resolvable(name: String, raw: ArgumentType<out T>, clazz: KClass<out T>) = ResolvableArgumentReference(name, raw, clazz)
 
     }
 
 }
 
-data class LiteralArgument(val literal: String) : Argument<String, String> {
+data class LiteralArgumentReference(val literal: String) : ArgumentReference<String, String> {
+
+    override val name = randomTag()
 
     override fun resolve(context: CommandContext): String {
         return literal
@@ -32,11 +36,11 @@ data class LiteralArgument(val literal: String) : Argument<String, String> {
 
 }
 
-data class VariableArgument<T : Any>(
-    val name: String,
+data class VariableArgumentReference<T : Any>(
+    override val name: String,
     val raw: ArgumentType<T>,
     val clazz: KClass<T>,
-) : Argument<T, T> {
+) : ArgumentReference<T, T> {
 
     override fun resolve(context: CommandContext): T {
         return context.cachedArguments[name].forceCastOrNull() ?: context.raw.getArgument(name, clazz.java)
@@ -44,11 +48,11 @@ data class VariableArgument<T : Any>(
 
 }
 
-data class ResolvableArgument<T : ArgumentResolver<R>, R : Any>(
-    val name: String,
+data class ResolvableArgumentReference<T : ArgumentResolver<R>, R : Any>(
+    override val name: String,
     val raw: ArgumentType<out T>,
     val clazz: KClass<out T>,
-) : Argument<T, R> {
+) : ArgumentReference<T, R> {
 
     override fun resolve(context: CommandContext): R {
         val result = context.cachedArguments[name].forceCastOrNull() ?: context.raw.getArgument(name, clazz.java)

@@ -3,9 +3,6 @@
 package dev.fruxz.brigadikt
 
 import com.mojang.brigadier.arguments.ArgumentType
-import com.mojang.brigadier.builder.RequiredArgumentBuilder
-import io.papermc.paper.command.brigadier.CommandSourceStack
-import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.command.brigadier.argument.resolvers.ArgumentResolver
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
@@ -17,41 +14,38 @@ data class VariableArgumentInstruction<T : Any>(
 
 sealed interface ArgumentBuilder<T : Any, R : Any> {
 
-    operator fun getValue(thisRef: Any?, property: KProperty<*>): Argument<T, R>
+    operator fun getValue(thisRef: Any?, property: KProperty<*>): ArgumentReference<T, R>
 
     operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): ArgumentBuilder<T, R>
 
 }
 
-data class LiteralArgumentBuilder(
+data class LiteralArgumentProvider(
     val literal: String,
 ) : ArgumentBuilder<String, String> {
 
-    override operator fun getValue(thisRef: Any?, property: KProperty<*>): Argument<String, String> {
-        println("gv thisRef: $thisRef, property: $property")
-        return Argument.literal(literal)
+    override operator fun getValue(thisRef: Any?, property: KProperty<*>): ArgumentReference<String, String> {
+        return ArgumentReference.literal(literal)
     }
 
-    override operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): LiteralArgumentBuilder {
-        println("pd thisRef: $thisRef, property: $property")
+    override operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): LiteralArgumentProvider {
         return this
     }
 
 }
 
-data class VariableArgumentBuilder<T : Any>(
+data class VariableArgumentProvider<T : Any>(
     val nameFixed: String? = null,
     val instruction: VariableArgumentInstruction<T>,
 ) : ArgumentBuilder<T, T> {
 
     lateinit var name: String
 
-    override operator fun getValue(thisRef: Any?, property: KProperty<*>): Argument<T, T> {
-        println("thisRef: $thisRef, property: $property")
-        return Argument.variable(name, instruction.raw, instruction.clazz)
+    override operator fun getValue(thisRef: Any?, property: KProperty<*>): ArgumentReference<T, T> {
+        return ArgumentReference.variable(name, instruction.raw, instruction.clazz)
     }
 
-    override operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): VariableArgumentBuilder<T> {
+    override operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): VariableArgumentProvider<T> {
         name = when {
             nameFixed != null -> nameFixed
             else -> property.name
@@ -62,18 +56,18 @@ data class VariableArgumentBuilder<T : Any>(
 
 }
 
-data class ResolvableArgumentBuilder<T : ArgumentResolver<R>, R : Any>(
+data class ResolvableArgumentProvider<T : ArgumentResolver<R>, R : Any>(
     val nameFixed: String? = null,
     val instruction: VariableArgumentInstruction<out T>,
 ) : ArgumentBuilder<T, R> {
 
     lateinit var name: String
 
-    override operator fun getValue(thisRef: Any?, property: KProperty<*>): Argument<T, R> {
-        return Argument.resolvable(name, instruction.raw, instruction.clazz)
+    override operator fun getValue(thisRef: Any?, property: KProperty<*>): ArgumentReference<T, R> {
+        return ArgumentReference.resolvable(name, instruction.raw, instruction.clazz)
     }
 
-    override operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): ResolvableArgumentBuilder<T, R> {
+    override operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): ResolvableArgumentProvider<T, R> {
         name = when {
             nameFixed != null -> nameFixed
             else -> property.name
