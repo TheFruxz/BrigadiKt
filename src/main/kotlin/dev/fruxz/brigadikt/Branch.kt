@@ -3,76 +3,53 @@
 package dev.fruxz.brigadikt
 
 import com.mojang.brigadier.arguments.ArgumentType
-import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.argument.resolvers.ArgumentResolver
 import kotlin.reflect.KClass
-import kotlin.reflect.full.primaryConstructor
 
-interface Branch {
-    val arguments: List<ArgumentBuilder<out Any, out Any>>
-    val requirements: List<RequirementContext.() -> Boolean>
-    val children: List<Branch>
-    val execution: (CommandContext.() -> Unit)?
-
-    fun toMutable(): MutableBranch {
-        return MutableBranch(arguments.toMutableList(), requirements.toMutableList(), children.toMutableList(), execution)
-    }
-
-    companion object {
-
-        operator fun invoke(
-            arguments: List<ArgumentBuilder<out Any, out Any>> = emptyList(),
-            requirements: List<RequirementContext.() -> Boolean> = emptyList(),
-            children: List<Branch> = emptyList(),
-            execution: (CommandContext.() -> Unit)? = null
-        ) = object : Branch {
-            override val arguments = arguments
-            override val requirements = requirements
-            override val children = children
-            override val execution = execution
-        }
-
-    }
-
+fun interface CommandExecutor {
+    fun CommandContext.execution()
 }
 
-open class MutableBranch(
-    override val arguments: MutableList<ArgumentBuilder<out Any, out Any>> = mutableListOf(),
-    override val requirements: MutableList<RequirementContext.() -> Boolean> = mutableListOf(),
-    override val children: MutableList<Branch> = mutableListOf(),
-    override var execution: (CommandContext.() -> Unit)? = null
-) : Branch {
+fun interface RequirementExecutor {
+    fun RequirementContext.requirement(): Boolean
+}
+
+open class Branch(
+    var arguments: List<ArgumentBuilder<out Any, out Any>> = listOf(),
+    var requirements: List<RequirementExecutor> = listOf(),
+    var children: List<Branch> = listOf(),
+    var execution: CommandExecutor? = null
+) {
 
     @BrigadiKtDSL
-    fun execute(execution: CommandContext.() -> Unit) {
+    fun execute(execution: CommandExecutor?) {
         this.execution = execution
     }
 
     // requirements
 
     @BrigadiKtDSL
-    fun requires(requirement: RequirementContext.() -> Boolean) {
-        requirements.add(requirement)
+    fun requires(requirement: RequirementExecutor) {
+        this.requirements += requirement
     }
 
     // branches
 
     @BrigadiKtDSL
-    fun branch(builder: MutableBranch.() -> Unit) {
-        MutableBranch().apply(builder).also(children::add)
+    fun branch(builder: Branch.() -> Unit) {
+        children += Branch().apply(builder)
     }
 
     @BrigadiKtDSL
-    fun branch(vararg literals: String, builder: MutableBranch.() -> Unit) {
-        MutableBranch(arguments = literals.map { LiteralArgumentProvider(it) }.toMutableList())
-            .apply(builder).also(children::add)
+    fun branch(vararg literals: String, builder: Branch.() -> Unit) {
+        children += Branch(arguments = literals.map { LiteralArgumentProvider(it) }).apply(builder)
     }
 
     // arguments - argument
 
     @BrigadiKtDSL
     fun <T : Any> argument(type: ArgumentType<T>, clazz: KClass<T>, name: String? = null): VariableArgumentProvider<T> {
-        return VariableArgumentProvider(name, VariableArgumentInstruction(type, clazz)).also(arguments::add)
+        return VariableArgumentProvider(name, VariableArgumentInstruction(type, clazz)).also { arguments += it }
     }
 
     @BrigadiKtDSL
@@ -84,7 +61,7 @@ open class MutableBranch(
 
     @BrigadiKtDSL
     fun <T : ArgumentResolver<R>, R : Any> argument(type: ArgumentType<T>, clazz: KClass<T>, name: String? = null): ResolvableArgumentProvider<T, R> {
-        return ResolvableArgumentProvider(name, VariableArgumentInstruction(type, clazz)).also(arguments::add)
+        return ResolvableArgumentProvider(name, VariableArgumentInstruction(type, clazz)).also { arguments += it }
     }
 
     @BrigadiKtDSL
@@ -93,15 +70,15 @@ open class MutableBranch(
 
 }
 
-data class CommandBranch(
+class CommandBranch(
     var name: String,
     var description: String = "",
-    val aliases: MutableList<String> = mutableListOf(),
-    override val arguments: MutableList<ArgumentBuilder<out Any, out Any>> = mutableListOf(),
-    override val requirements: MutableList<RequirementContext.() -> Boolean> = mutableListOf(),
-    override val children: MutableList<Branch> = mutableListOf(),
-    override var execution: (CommandContext.() -> Unit)? = { },
-) : MutableBranch(arguments.toMutableList(), requirements.toMutableList(), children.toMutableList(), execution) {
+    var aliases: List<String> = emptyList(),
+    arguments: List<ArgumentBuilder<out Any, out Any>> = listOf(),
+    requirements: List<RequirementExecutor> = listOf(),
+    children: List<Branch> = listOf(),
+    execution: CommandExecutor? = null,
+) : Branch(arguments, requirements, children, execution) {
 
     @BrigadiKtDSL
     fun name(name: String) {
@@ -115,7 +92,7 @@ data class CommandBranch(
 
     @BrigadiKtDSL
     fun alias(vararg alias: String) {
-        aliases.addAll(alias)
+        aliases += alias
     }
 
 }

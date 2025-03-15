@@ -23,7 +23,9 @@ object CommandFactory {
 
         if (branch.requirements.isNotEmpty()) {
             raw.requires { context ->
-                branch.requirements.all { it.invoke(object : RequirementContext(context) {}) }
+                branch.requirements.all {
+                    with(it) { object : RequirementContext(context) {}.requirement() }
+                }
             }
         }
 
@@ -59,7 +61,7 @@ object CommandFactory {
                     path.executes { context ->
                         println("Executing ${branch}")
                         var resultState = 0
-                        execution.invoke(object : CommandContext(
+                        val context = object : CommandContext(
                             context,
                             mutableMapOf()
                         ) {
@@ -67,7 +69,10 @@ object CommandFactory {
                                 resultState = state
                                 process()
                             }
-                        })
+                        }
+
+                        with(execution) { context.execution() }
+
                         return@executes resultState
                     }
                 }
