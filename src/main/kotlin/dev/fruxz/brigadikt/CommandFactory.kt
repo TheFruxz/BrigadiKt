@@ -30,7 +30,16 @@ object CommandFactory {
 
         when (queuedArguments.size) {
             0 -> {
-                throw IllegalStateException("No more arguments to populate")
+                val children = branch.children
+                if (children.isNotEmpty()) {
+                    children.forEach { child ->
+                        populate(raw, child, child.arguments)
+                    }
+                } else {
+                    throw IllegalStateException("Empty path, no queued arguments and no children")
+                }
+
+                return raw
             }
             1 -> {
                 val path = when (val argument = queuedArguments.first()) {
