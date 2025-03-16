@@ -5,6 +5,8 @@ package dev.fruxz.brigadikt
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.context.CommandContext
 import dev.fruxz.ascend.extension.forceCastOrNull
+import dev.fruxz.ascend.extension.logging.getItsLogger
+import dev.fruxz.ascend.extension.switch
 import dev.fruxz.stacked.extension.api.StyledString
 import dev.fruxz.stacked.extension.asStyledComponent
 import io.papermc.paper.command.brigadier.CommandSourceStack
@@ -20,10 +22,10 @@ interface CommandAccess {
     val path: List<String>
 
     @BrigadiKtDSL
-    fun CommandSender.hasPathPermission(): Boolean
+    fun CommandSender.hasPathPermission(logResult: Boolean = false): Boolean
 
     @BrigadiKtDSL
-    fun CommandSender.hasPathPermission(suffix: String): Boolean
+    fun CommandSender.hasPathPermission(suffix: String, logResult: Boolean = false): Boolean
 
 }
 
@@ -70,11 +72,13 @@ abstract class CommandContext(
         sender.sendMessage(component)
     }
 
-    override fun CommandSender.hasPathPermission(): Boolean =
+    override fun CommandSender.hasPathPermission(logResult: Boolean): Boolean =
         hasPermission(path.joinToString("."))
+            .also { if (logResult) this@CommandContext.getItsLogger().info("sender ${this.name} ${it.switch("has", "has not")} permission '${path.joinToString(".")}'") }
 
-    override fun CommandSender.hasPathPermission(suffix: String): Boolean =
+    override fun CommandSender.hasPathPermission(suffix: String, logResult: Boolean): Boolean =
         hasPermission((path + suffix).joinToString("."))
+            .also { if (logResult) this@CommandContext.getItsLogger().info("sender ${this.name} ${it.switch("has", "has not")} permission '${path.joinToString(".")}'") }
 
 }
 
@@ -86,10 +90,12 @@ abstract class RequirementContext(
     final override val sender = raw.sender
     final override val isPlayer = sender is Player
 
-    override fun CommandSender.hasPathPermission(): Boolean =
+    override fun CommandSender.hasPathPermission(logResult: Boolean): Boolean =
         hasPermission(path.joinToString("."))
+            .also { if (logResult) this@RequirementContext.getItsLogger().info("sender ${this.name} ${it.switch("has", "has not")} permission '${path.joinToString(".")}'") }
 
-    override fun CommandSender.hasPathPermission(suffix: String): Boolean =
+    override fun CommandSender.hasPathPermission(suffix: String, logResult: Boolean): Boolean =
         hasPermission((path + suffix).joinToString("."))
+            .also { if (logResult) this@RequirementContext.getItsLogger().info("sender ${this.name} ${it.switch("has", "has not")} permission '${path.joinToString(".")}'") }
 
 }
