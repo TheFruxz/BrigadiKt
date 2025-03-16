@@ -13,18 +13,28 @@ typealias PaperArgBuilder = BrigadierBuilderArgumentBuilder<CommandSourceStack, 
 // v2 attempt
 object CommandFactory {
 
-    fun renderCommand(commandBranch: CommandBranch): BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack> {
+    fun renderCommand(commandBranch: CommandBranch<*>): BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack> {
         val raw = Commands.literal(commandBranch.name)
 
         return renderBranch(raw, commandBranch, commandBranch.arguments).takeIfInstance<BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack>>() ?: throw IllegalStateException("Failed to render command")
     }
+
+    fun CommandBranch<*>.render(): BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack> =
+        renderCommand(this)
 
     fun renderBranch(raw: PaperArgBuilder, branch: Branch, queuedArguments: List<ArgumentProvider<*, *>>): PaperArgBuilder {
 
         if (branch.requirements.isNotEmpty()) {
             raw.requires { context ->
                 branch.requirements.all { requirement ->
-                    with(requirement.requirement) { object : RequirementContext(context) {}.requirement() }
+                    with(requirement.requirement) {
+                        val requirementContext = object : RequirementContext(
+                            raw = context,
+                            path = branch.buildNamePath()
+                        ) {}
+
+                        return@all requirementContext.requirement()
+                    }
                 }
             }
         }
@@ -57,9 +67,10 @@ object CommandFactory {
                     path.executes { context ->
                         println("Executing ${branch}")
                         var resultState = 0
-                        val context = object : CommandContext(
-                            context,
-                            mutableMapOf()
+                        val commandContext = object : CommandContext(
+                            raw = context,
+                            cachedArguments = mutableMapOf(),
+                            path = branch.buildNamePath(),
                         ) {
                             override fun state(state: Int, process: () -> Unit) {
                                 resultState = state
@@ -67,7 +78,7 @@ object CommandFactory {
                             }
                         }
 
-                        with(execution) { context.execution() }
+                        with(execution) { commandContext.execution() }
 
                         return@executes resultState
                     }

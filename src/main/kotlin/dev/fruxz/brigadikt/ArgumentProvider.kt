@@ -16,6 +16,8 @@ data class VariableArgumentInstruction<T : Any>(
 
 sealed interface ArgumentProvider<T : Any, R : Any> : Producible<PaperArgBuilder> {
 
+    val name: String
+
     operator fun getValue(thisRef: Any?, property: KProperty<*>): ArgumentReference<T, R>
 
     operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): ArgumentProvider<T, R> {
@@ -29,6 +31,8 @@ sealed interface ArgumentProvider<T : Any, R : Any> : Producible<PaperArgBuilder
 data class LiteralArgumentProvider(
     val literal: String,
 ) : ArgumentProvider<String, String> {
+
+    override val name by this::literal
 
     override operator fun getValue(thisRef: Any?, property: KProperty<*>): ArgumentReference<String, String> {
         return ArgumentReference.literal(literal)
@@ -49,7 +53,7 @@ data class VariableArgumentProvider<T : Any>(
     val instruction: VariableArgumentInstruction<T>,
 ) : ArgumentProvider<T, T> {
 
-    lateinit var name: String
+    override lateinit var name: String
 
     override operator fun getValue(thisRef: Any?, property: KProperty<*>): ArgumentReference<T, T> {
         return ArgumentReference.variable(name, instruction.raw, instruction.clazz)
@@ -75,7 +79,7 @@ data class ResolvableArgumentProvider<T : ArgumentResolver<R>, R : Any>(
     val instruction: VariableArgumentInstruction<out T>,
 ) : ArgumentProvider<T, R> {
 
-    lateinit var name: String
+    override lateinit var name: String
 
     override operator fun getValue(thisRef: Any?, property: KProperty<*>): ArgumentReference<T, R> {
         return ArgumentReference.resolvable(name, instruction.raw, instruction.clazz)
@@ -100,6 +104,8 @@ data class ArgumentProviderProcessor<T : Any, R : Any, O : Any>(
     val input: ArgumentProvider<T, R>,
     val processor: ArgumentProcessor<R, O>
 ) : ArgumentProvider<T, O> {
+
+    override val name by this.input::name
 
     override fun getValue(thisRef: Any?, property: KProperty<*>): ArgumentReference<T, O> {
         return ProcessedArgumentReference(input.getValue(thisRef, property), processor)

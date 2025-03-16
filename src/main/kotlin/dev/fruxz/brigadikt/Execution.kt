@@ -17,19 +17,24 @@ interface CommandAccess {
     val sender: CommandSender
     val isPlayer: Boolean
     val isConsole: Boolean get() = !isPlayer
+    val path: List<String>
 
     @BrigadiKtDSL
-    fun CommandSender.hasSubPermission(sub: String): Boolean
+    fun CommandSender.hasPathPermission(): Boolean
+
+    @BrigadiKtDSL
+    fun CommandSender.hasPathPermission(suffix: String): Boolean
 
 }
 
 abstract class CommandContext(
     val raw: CommandContext<CommandSourceStack>,
-    val cachedArguments: MutableMap<String, Any>
+    val cachedArguments: MutableMap<String, Any>,
+    final override val path: List<String>,
 ): CommandAccess {
 
     final override val sender = raw.source.sender
-    override val isPlayer = sender is Player
+    final override val isPlayer = sender is Player
 
     @BrigadiKtDSL
     operator fun <T : Any, R : Any> get(argumentReference: ArgumentReference<T, R>): R {
@@ -65,21 +70,26 @@ abstract class CommandContext(
         sender.sendMessage(component)
     }
 
-    override fun CommandSender.hasSubPermission(sub: String): Boolean {
-        return hasPermission("brigadikt.$sub") // TODO proper permission generation
-    }
+    override fun CommandSender.hasPathPermission(): Boolean =
+        hasPermission(path.joinToString("."))
+
+    override fun CommandSender.hasPathPermission(suffix: String): Boolean =
+        hasPermission((path + suffix).joinToString("."))
 
 }
 
 abstract class RequirementContext(
     val raw: CommandSourceStack,
+    final override val path: List<String>,
 ) : CommandAccess {
 
     final override val sender = raw.sender
-    override val isPlayer = sender is Player
+    final override val isPlayer = sender is Player
 
-    override fun CommandSender.hasSubPermission(sub: String): Boolean {
-        return hasPermission("brigadikt.$sub") // TODO proper permission generation
-    }
+    override fun CommandSender.hasPathPermission(): Boolean =
+        hasPermission(path.joinToString("."))
+
+    override fun CommandSender.hasPathPermission(suffix: String): Boolean =
+        hasPermission((path + suffix).joinToString("."))
 
 }

@@ -4,6 +4,7 @@ package dev.fruxz.brigadikt
 
 import com.mojang.brigadier.arguments.ArgumentType
 import io.papermc.paper.command.brigadier.argument.resolvers.ArgumentResolver
+import org.bukkit.plugin.Plugin
 import kotlin.reflect.KClass
 
 fun interface CommandExecutor {
@@ -27,11 +28,23 @@ data class BranchRequirement(
 }
 
 open class Branch(
+    val parent: Branch? = null,
     var arguments: List<ArgumentProvider<out Any, out Any>> = listOf(),
     var requirements: List<BranchRequirement> = listOf(),
     var children: List<Branch> = listOf(),
     var execution: CommandExecutor? = null
 ) {
+
+    fun buildNamePath() = buildList {
+        var current: Branch? = this@Branch
+        while (current != null) {
+            if (current is CommandBranch<*>) {
+                addAll(0, listOf(current.plugin.name.lowercase(), "command", current.name))
+            }
+            addAll(0, current.arguments.map(ArgumentProvider<*, *>::name))
+            current = current.parent
+        }
+    }
 
     @BrigadiKtDSL
     fun execute(execution: CommandExecutor?) {
@@ -58,6 +71,7 @@ open class Branch(
     @BrigadiKtDSL
     fun branch(builder: Branch.() -> Unit) {
         children += Branch(
+            parent = this,
             requirements = this.requirements.filter { it.target == BranchRequirement.BranchRequirementTarget.PASS_THROUGH } // pass through requirements
         ).apply(builder)
     }
@@ -65,6 +79,7 @@ open class Branch(
     @BrigadiKtDSL
     fun branch(vararg literals: String, builder: Branch.() -> Unit) {
         children += Branch(
+            parent = this,
             arguments = literals.map { LiteralArgumentProvider(it) },
             requirements = this.requirements.filter { it.target == BranchRequirement.BranchRequirementTarget.PASS_THROUGH }, // pass through requirements
         ).apply(builder)
@@ -95,7 +110,8 @@ open class Branch(
 
 }
 
-class CommandBranch(
+class CommandBranch<T : Plugin>(
+    val plugin: T,
     var name: String,
     var description: String = "",
     var aliases: List<String> = emptyList(),
@@ -103,7 +119,13 @@ class CommandBranch(
     requirements: List<BranchRequirement> = listOf(),
     children: List<Branch> = listOf(),
     execution: CommandExecutor? = null,
-) : Branch(arguments, requirements, children, execution) {
+) : Branch(
+    parent = null,
+    arguments = arguments,
+    requirements = requirements,
+    children = children,
+    execution = execution
+) {
 
     @BrigadiKtDSL
     fun name(name: String) {
@@ -123,5 +145,5 @@ class CommandBranch(
 }
 
 @BrigadiKtDSL
-fun command(name: String, builder: CommandBranch.() -> Unit) =
-    CommandBranch(name).apply(builder)
+fun <T : Plugin> command(plugin: T, name: String, builder: CommandBranch<T>.() -> Unit) =
+    CommandBranch(plugin, name).apply(builder)
