@@ -23,8 +23,8 @@ object CommandFactory {
 
         if (branch.requirements.isNotEmpty()) {
             raw.requires { context ->
-                branch.requirements.all {
-                    with(it) { object : RequirementContext(context) {}.requirement() }
+                branch.requirements.all { requirement ->
+                    with(requirement.requirement) { object : RequirementContext(context) {}.requirement() }
                 }
             }
         }

@@ -14,9 +14,21 @@ fun interface RequirementExecutor {
     fun RequirementContext.requirement(): Boolean
 }
 
+data class BranchRequirement(
+    val requirement: RequirementExecutor,
+    val target: BranchRequirementTarget = BranchRequirementTarget.THIS,
+) {
+
+    enum class BranchRequirementTarget {
+        THIS,
+        PASS_THROUGH,
+    }
+
+}
+
 open class Branch(
     var arguments: List<ArgumentProvider<out Any, out Any>> = listOf(),
-    var requirements: List<RequirementExecutor> = listOf(),
+    var requirements: List<BranchRequirement> = listOf(),
     var children: List<Branch> = listOf(),
     var execution: CommandExecutor? = null
 ) {
@@ -30,19 +42,32 @@ open class Branch(
 
     @BrigadiKtDSL
     fun requires(requirement: RequirementExecutor) {
-        this.requirements += requirement
+        this.requirements += BranchRequirement(requirement, target = BranchRequirement.BranchRequirementTarget.THIS)
+    }
+
+    @BrigadiKtDSL
+    fun requires(
+        target: BranchRequirement.BranchRequirementTarget,
+        requirement: RequirementExecutor
+    ) {
+        this.requirements += BranchRequirement(requirement, target = target)
     }
 
     // branches
 
     @BrigadiKtDSL
     fun branch(builder: Branch.() -> Unit) {
-        children += Branch().apply(builder)
+        children += Branch(
+            requirements = this.requirements.filter { it.target == BranchRequirement.BranchRequirementTarget.PASS_THROUGH } // pass through requirements
+        ).apply(builder)
     }
 
     @BrigadiKtDSL
     fun branch(vararg literals: String, builder: Branch.() -> Unit) {
-        children += Branch(arguments = literals.map { LiteralArgumentProvider(it) }).apply(builder)
+        children += Branch(
+            arguments = literals.map { LiteralArgumentProvider(it) },
+            requirements = this.requirements.filter { it.target == BranchRequirement.BranchRequirementTarget.PASS_THROUGH }, // pass through requirements
+        ).apply(builder)
     }
 
     // arguments - argument
@@ -75,7 +100,7 @@ class CommandBranch(
     var description: String = "",
     var aliases: List<String> = emptyList(),
     arguments: List<ArgumentProvider<out Any, out Any>> = listOf(),
-    requirements: List<RequirementExecutor> = listOf(),
+    requirements: List<BranchRequirement> = listOf(),
     children: List<Branch> = listOf(),
     execution: CommandExecutor? = null,
 ) : Branch(arguments, requirements, children, execution) {
