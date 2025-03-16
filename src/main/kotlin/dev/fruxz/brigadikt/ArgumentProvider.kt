@@ -3,6 +3,8 @@
 package dev.fruxz.brigadikt
 
 import com.mojang.brigadier.arguments.ArgumentType
+import dev.fruxz.ascend.tool.smart.generate.producible.Producible
+import io.papermc.paper.command.brigadier.Commands
 import io.papermc.paper.command.brigadier.argument.resolvers.ArgumentResolver
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
@@ -12,17 +14,21 @@ data class VariableArgumentInstruction<T : Any>(
     val clazz: KClass<T>,
 )
 
-sealed interface ArgumentBuilder<T : Any, R : Any> {
+sealed interface ArgumentProvider<T : Any, R : Any> : Producible<PaperArgBuilder> {
 
     operator fun getValue(thisRef: Any?, property: KProperty<*>): ArgumentReference<T, R>
 
-    operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): ArgumentBuilder<T, R>
+    operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): ArgumentProvider<T, R> {
+        return this
+    }
+
+    override fun produce(): PaperArgBuilder
 
 }
 
 data class LiteralArgumentProvider(
     val literal: String,
-) : ArgumentBuilder<String, String> {
+) : ArgumentProvider<String, String> {
 
     override operator fun getValue(thisRef: Any?, property: KProperty<*>): ArgumentReference<String, String> {
         return ArgumentReference.literal(literal)
@@ -32,12 +38,16 @@ data class LiteralArgumentProvider(
         return this
     }
 
+    override fun produce(): PaperArgBuilder {
+        return Commands.literal(literal)
+    }
+
 }
 
 data class VariableArgumentProvider<T : Any>(
     val nameFixed: String? = null,
     val instruction: VariableArgumentInstruction<T>,
-) : ArgumentBuilder<T, T> {
+) : ArgumentProvider<T, T> {
 
     lateinit var name: String
 
@@ -54,12 +64,16 @@ data class VariableArgumentProvider<T : Any>(
         return this
     }
 
+    override fun produce(): PaperArgBuilder {
+        return Commands.argument(name, instruction.raw)
+    }
+
 }
 
 data class ResolvableArgumentProvider<T : ArgumentResolver<R>, R : Any>(
     val nameFixed: String? = null,
     val instruction: VariableArgumentInstruction<out T>,
-) : ArgumentBuilder<T, R> {
+) : ArgumentProvider<T, R> {
 
     lateinit var name: String
 
@@ -74,6 +88,30 @@ data class ResolvableArgumentProvider<T : ArgumentResolver<R>, R : Any>(
         }
 
         return this
+    }
+
+    override fun produce(): PaperArgBuilder {
+        return Commands.argument(name, instruction.raw)
+    }
+
+}
+
+data class ArgumentProviderProcessor<T : Any, R : Any, O : Any>(
+    val input: ArgumentProvider<T, R>,
+    val processor: ArgumentProcessor<R, O>
+) : ArgumentProvider<T, O> {
+
+    override fun getValue(thisRef: Any?, property: KProperty<*>): ArgumentReference<T, O> {
+        return ProcessedArgumentReference(input.getValue(thisRef, property), processor)
+    }
+
+    override fun provideDelegate(thisRef: Any?, property: KProperty<*>): ArgumentProvider<T, O> {
+        input.provideDelegate(thisRef, property)
+        return this
+    }
+
+    override fun produce(): PaperArgBuilder {
+        return input.produce()
     }
 
 }

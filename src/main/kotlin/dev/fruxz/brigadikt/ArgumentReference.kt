@@ -62,3 +62,16 @@ data class ResolvableArgumentReference<T : ArgumentResolver<R>, R : Any>(
     }
 
 }
+
+data class ProcessedArgumentReference<T : Any, R : Any, O : Any>(
+    val original: ArgumentReference<T, R>,
+    val processor: ArgumentProcessor<R, O>,
+) : ArgumentReference<T, O> {
+
+    override val name: String = original.name
+
+    override fun resolve(context: CommandContext): O {
+        return context.cachedArguments[name].forceCastOrNull<O>() ?: processor.process(context, original.resolve(context))
+    }
+
+}

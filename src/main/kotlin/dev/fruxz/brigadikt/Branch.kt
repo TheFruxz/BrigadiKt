@@ -15,7 +15,7 @@ fun interface RequirementExecutor {
 }
 
 open class Branch(
-    var arguments: List<ArgumentBuilder<out Any, out Any>> = listOf(),
+    var arguments: List<ArgumentProvider<out Any, out Any>> = listOf(),
     var requirements: List<RequirementExecutor> = listOf(),
     var children: List<Branch> = listOf(),
     var execution: CommandExecutor? = null
@@ -74,7 +74,7 @@ class CommandBranch(
     var name: String,
     var description: String = "",
     var aliases: List<String> = emptyList(),
-    arguments: List<ArgumentBuilder<out Any, out Any>> = listOf(),
+    arguments: List<ArgumentProvider<out Any, out Any>> = listOf(),
     requirements: List<RequirementExecutor> = listOf(),
     children: List<Branch> = listOf(),
     execution: CommandExecutor? = null,

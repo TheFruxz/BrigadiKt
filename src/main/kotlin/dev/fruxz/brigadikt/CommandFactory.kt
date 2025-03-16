@@ -19,7 +19,7 @@ object CommandFactory {
         return renderBranch(raw, commandBranch, commandBranch.arguments).takeIfInstance<BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack>>() ?: throw IllegalStateException("Failed to render command")
     }
 
-    fun renderBranch(raw: PaperArgBuilder, branch: Branch, queuedArguments: List<ArgumentBuilder<*, *>>): PaperArgBuilder {
+    fun renderBranch(raw: PaperArgBuilder, branch: Branch, queuedArguments: List<ArgumentProvider<*, *>>): PaperArgBuilder {
 
         if (branch.requirements.isNotEmpty()) {
             raw.requires { context ->
@@ -43,11 +43,7 @@ object CommandFactory {
                 return raw
             }
             1 -> {
-                val path = when (val argument = queuedArguments.first()) {
-                    is LiteralArgumentProvider -> Commands.literal(argument.literal)
-                    is VariableArgumentProvider<*> -> Commands.argument(argument.name, argument.instruction.raw)
-                    is ResolvableArgumentProvider<*, *> -> Commands.argument(argument.name, argument.instruction.raw)
-                }
+                val path = queuedArguments.first().produce()
 
                 val children = branch.children
                 if (children.isNotEmpty()) {
@@ -81,12 +77,7 @@ object CommandFactory {
             }
             else -> {
                 val argument = queuedArguments.first()
-
-                val producedBranch = when (argument) {
-                    is LiteralArgumentProvider -> Commands.literal(argument.literal)
-                    is VariableArgumentProvider<*> -> Commands.argument(argument.name, argument.instruction.raw)
-                    is ResolvableArgumentProvider<*, *> -> Commands.argument(argument.name, argument.instruction.raw)
-                }
+                val producedBranch = argument.produce()
 
                 return raw.then(
                     renderBranch(producedBranch, branch, queuedArguments.drop(1))
