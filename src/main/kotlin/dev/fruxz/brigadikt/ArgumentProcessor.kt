@@ -25,3 +25,6 @@ fun <R : Iterable<O>, O : Any> ArgumentProvider<*, R>.filter(predicate: (O) -> B
 
 fun <R : Iterable<O>, O : Any> ArgumentProvider<*, R>.reversed() =
     processor { _, raw -> raw.reversed() }
+
+fun ArgumentProvider<*, String>.string(format: String.() -> String) =
+    processor { _, raw -> format(raw) }
