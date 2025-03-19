@@ -10,15 +10,18 @@ import dev.fruxz.ascend.extension.switch
 import dev.fruxz.stacked.extension.api.StyledString
 import dev.fruxz.stacked.extension.asStyledComponent
 import io.papermc.paper.command.brigadier.CommandSourceStack
+import net.kyori.adventure.sound.Sound
 import net.kyori.adventure.text.ComponentLike
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 
 interface CommandAccess {
 
     val sender: CommandSender
-    val isPlayer: Boolean
-    val isConsole: Boolean get() = !isPlayer
+    val executor: Entity?
+    val isPlayer: Boolean // TODO check again with executor
+    val isConsole: Boolean get() = !isPlayer // TODO check again with executor
     val path: List<String>
 
     @BrigadiKtDSL
@@ -32,10 +35,12 @@ interface CommandAccess {
 abstract class CommandContext(
     val raw: CommandContext<CommandSourceStack>,
     val cachedArguments: MutableMap<String, Any>,
+    val replyRenderer: ReplyChatRenderer?,
     final override val path: List<String>,
 ): CommandAccess {
 
     final override val sender = raw.source.sender
+    final override val executor = raw.source.executor
     final override val isPlayer = sender is Player
 
     @BrigadiKtDSL
@@ -63,14 +68,17 @@ abstract class CommandContext(
     @BrigadiKtDSL fun success(@StyledString message: String) = state(Command.SINGLE_SUCCESS, message)
 
     @BrigadiKtDSL
-    fun reply(@StyledString message: String) {
-        sender.sendMessage(message.asStyledComponent)
+    fun reply(component: ComponentLike, sound: Sound? = null) {
+        val audience = executor ?: sender
+        val message = replyRenderer?.render(sender, executor, component, audience) ?: component
+
+        audience.sendMessage(message.asComponent())
+        if (sound != null) audience.playSound(sound, Sound.Emitter.self())
     }
 
     @BrigadiKtDSL
-    fun reply(component: ComponentLike) {
-        sender.sendMessage(component)
-    }
+    fun reply(@StyledString message: String, sound: Sound? = null) =
+        this.reply(component = message.asStyledComponent, sound = sound)
 
     override fun CommandSender.hasPathPermission(logResult: Boolean): Boolean =
         hasPermission(path.joinToString("."))
@@ -88,6 +96,7 @@ abstract class RequirementContext(
 ) : CommandAccess {
 
     final override val sender = raw.sender
+    override val executor = raw.executor
     final override val isPlayer = sender is Player
 
     override fun CommandSender.hasPathPermission(logResult: Boolean): Boolean =

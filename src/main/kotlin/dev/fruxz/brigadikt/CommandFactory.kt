@@ -71,6 +71,7 @@ object CommandFactory {
                             raw = context,
                             cachedArguments = mutableMapOf(),
                             path = branch.buildNamePath(),
+                            replyRenderer = branch.chatRenderer,
                         ) {
                             override fun state(state: Int, process: () -> Unit) {
                                 resultState = state

@@ -3,17 +3,11 @@
 package dev.fruxz.brigadikt
 
 import com.mojang.brigadier.arguments.ArgumentType
+import dev.fruxz.brigadikt.executor.CommandExecutor
+import dev.fruxz.brigadikt.executor.RequirementExecutor
 import io.papermc.paper.command.brigadier.argument.resolvers.ArgumentResolver
 import org.bukkit.plugin.Plugin
 import kotlin.reflect.KClass
-
-fun interface CommandExecutor {
-    fun CommandContext.execution()
-}
-
-fun interface RequirementExecutor {
-    fun RequirementContext.requirement(): Boolean
-}
 
 data class BranchRequirement(
     val requirement: RequirementExecutor,
@@ -29,6 +23,7 @@ data class BranchRequirement(
 
 open class Branch(
     val parent: Branch? = null,
+    var chatRenderer: ReplyChatRenderer? = null,
     var arguments: List<ArgumentProvider<out Any, out Any>> = listOf(),
     var requirements: List<BranchRequirement> = listOf(),
     var children: List<Branch> = listOf(),
@@ -66,12 +61,20 @@ open class Branch(
         this.requirements += BranchRequirement(requirement, target = target)
     }
 
+    // formatter
+
+    @BrigadiKtDSL
+    fun formatter(replyChatRenderer: ReplyChatRenderer) {
+        this.chatRenderer = replyChatRenderer
+    }
+
     // branches
 
     @BrigadiKtDSL
     fun branch(builder: Branch.() -> Unit) {
         children += Branch(
             parent = this,
+            chatRenderer = this.chatRenderer,
             requirements = this.requirements.filter { it.target == BranchRequirement.BranchRequirementTarget.PASS_THROUGH } // pass through requirements
         ).apply(builder)
     }
@@ -80,6 +83,7 @@ open class Branch(
     fun branch(vararg literals: String, builder: Branch.() -> Unit) {
         children += Branch(
             parent = this,
+            chatRenderer = this.chatRenderer,
             arguments = literals.map { LiteralArgumentProvider(it) },
             requirements = this.requirements.filter { it.target == BranchRequirement.BranchRequirementTarget.PASS_THROUGH }, // pass through requirements
         ).apply(builder)
@@ -115,12 +119,14 @@ class CommandBranch<T : Plugin>(
     var name: String,
     var description: String = "",
     var aliases: List<String> = emptyList(),
+    chatRenderer: ReplyChatRenderer? = null,
     arguments: List<ArgumentProvider<out Any, out Any>> = listOf(),
     requirements: List<BranchRequirement> = listOf(),
     children: List<Branch> = listOf(),
     execution: CommandExecutor? = null,
 ) : Branch(
     parent = null,
+    chatRenderer = chatRenderer,
     arguments = arguments,
     requirements = requirements,
     children = children,
