@@ -7,10 +7,13 @@ import com.mojang.brigadier.context.CommandContext
 import dev.fruxz.ascend.extension.forceCastOrNull
 import dev.fruxz.ascend.extension.logging.getItsLogger
 import dev.fruxz.ascend.extension.switch
+import dev.fruxz.stacked.StackedBuilder
 import dev.fruxz.stacked.extension.api.StyledString
 import dev.fruxz.stacked.extension.asStyledComponent
+import dev.fruxz.stacked.extension.toStackedBuilder
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import net.kyori.adventure.sound.Sound
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.ComponentLike
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Entity
@@ -79,6 +82,10 @@ abstract class CommandContext(
     @BrigadiKtDSL
     fun reply(@StyledString message: String, sound: Sound? = null) =
         this.reply(component = message.asStyledComponent, sound = sound)
+
+    @BrigadiKtDSL
+    fun reply(sound: Sound? = null, messageBuilder: StackedBuilder.() -> Unit) =
+        this.reply(Component.empty().toStackedBuilder().apply(messageBuilder), sound)
 
     override fun CommandSender.hasPathPermission(logResult: Boolean): Boolean =
         hasPermission(path.joinToString("."))
