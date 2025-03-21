@@ -1,8 +1,8 @@
-import java.util.Calendar
+import java.util.*
 
 plugins {
-    kotlin("jvm") version "2.1.10"
-    kotlin("plugin.serialization") version "2.1.0"
+    kotlin("jvm") version "2.1.20"
+    kotlin("plugin.serialization") version "2.1.20"
     id("org.jetbrains.dokka") version "2.0.0"
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.14"
     id("xyz.jpenilla.run-paper") version "2.3.1"
@@ -46,8 +46,8 @@ dependencies {
     paperweight.paperDevBundle("1.21.4-R0.1-SNAPSHOT")
 
     // MoltenKt
-    api("dev.fruxz:ascend:+")
-    api("dev.fruxz:stacked:+")
+    api("dev.fruxz:ascend:2025.3-c861242")
+    api("dev.fruxz:stacked:2025.3-a7cd9b7")
 
     // Brigadier
     api("com.mojang:brigadier:1.0.18")
@@ -86,5 +86,5 @@ tasks {
 }
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(23)
 }
