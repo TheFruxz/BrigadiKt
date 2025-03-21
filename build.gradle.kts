@@ -14,7 +14,7 @@ val publishVersion = System.getenv("GH_RELEASE_VERSION")
 val calendar = Calendar.getInstance()
 
 group = "dev.fruxz"
-version = publishVersion ?: "${calendar[Calendar.YEAR]}.${calendar[Calendar.MONTH] + 1}-dev"
+version = publishVersion?.plus("-preview") ?: "${calendar[Calendar.YEAR]}.${calendar[Calendar.MONTH] + 1}-dev"
 
 
 repositories {
