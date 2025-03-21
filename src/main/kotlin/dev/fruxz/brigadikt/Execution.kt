@@ -23,8 +23,10 @@ interface CommandAccess {
 
     val sender: CommandSender
     val executor: Entity?
-    val isPlayer: Boolean // TODO check again with executor
-    val isConsole: Boolean get() = !isPlayer // TODO check again with executor
+    val audience: CommandSender
+
+    val isPlayer: Boolean
+    val isConsole: Boolean get() = !isPlayer
     val path: List<String>
 
     @BrigadiKtDSL
@@ -44,7 +46,8 @@ abstract class CommandContext(
 
     final override val sender = raw.source.sender
     final override val executor = raw.source.executor
-    final override val isPlayer = sender is Player
+    final override val audience = executor ?: sender
+    final override val isPlayer = audience is Player
 
     @BrigadiKtDSL
     operator fun <T : Any, R : Any> get(argumentReference: ArgumentReference<T, R>): R {
@@ -72,7 +75,6 @@ abstract class CommandContext(
 
     @BrigadiKtDSL
     fun reply(component: ComponentLike, sound: Sound? = null) {
-        val audience = executor ?: sender
         val message = replyRenderer?.render(sender, executor, component, audience) ?: component
 
         audience.sendMessage(message.asComponent())
@@ -103,8 +105,9 @@ abstract class RequirementContext(
 ) : CommandAccess {
 
     final override val sender = raw.sender
-    override val executor = raw.executor
-    final override val isPlayer = sender is Player
+    final override val executor = raw.executor
+    final override val audience = executor ?: sender
+    final override val isPlayer = audience is Player
 
     override fun CommandSender.hasPathPermission(logResult: Boolean): Boolean =
         hasPermission(path.joinToString("."))
