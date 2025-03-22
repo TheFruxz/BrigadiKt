@@ -65,7 +65,6 @@ object CommandFactory {
                 val execution = branch.execution
                 if (execution != null) {
                     path.executes { context ->
-                        println("Executing ${branch}")
                         var resultState = 0
                         val commandContext = object : CommandContext(
                             raw = context,
