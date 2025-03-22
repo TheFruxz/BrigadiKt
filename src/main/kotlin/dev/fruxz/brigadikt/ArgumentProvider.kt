@@ -60,10 +60,7 @@ data class VariableArgumentProvider<T : Any>(
     }
 
     override operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): VariableArgumentProvider<T> {
-        name = when {
-            nameFixed != null -> nameFixed
-            else -> property.name
-        }
+        name = nameFixed ?: property.name
 
         return this
     }
@@ -86,10 +83,7 @@ data class ResolvableArgumentProvider<T : ArgumentResolver<R>, R : Any>(
     }
 
     override operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): ResolvableArgumentProvider<T, R> {
-        name = when {
-            nameFixed != null -> nameFixed
-            else -> property.name
-        }
+        name = nameFixed ?: property.name
 
         return this
     }
