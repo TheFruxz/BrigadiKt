@@ -7,6 +7,7 @@ import com.mojang.brigadier.context.CommandContext
 import dev.fruxz.ascend.extension.forceCastOrNull
 import dev.fruxz.ascend.extension.logging.getItsLogger
 import dev.fruxz.ascend.extension.switch
+import dev.fruxz.brigadikt.structure.ArgumentProvider
 import dev.fruxz.stacked.StackedBuilder
 import dev.fruxz.stacked.extension.api.StyledString
 import dev.fruxz.stacked.extension.asStyledComponent
@@ -39,7 +40,6 @@ interface CommandAccess {
 
 abstract class CommandContext(
     val raw: CommandContext<CommandSourceStack>,
-    val cachedArguments: MutableMap<String, Any>,
     val replyRenderer: ReplyChatRenderer?,
     final override val path: List<String>,
 ): CommandAccess {
@@ -50,14 +50,11 @@ abstract class CommandContext(
     final override val isPlayer = audience is Player
 
     @BrigadiKtDSL
-    operator fun <T : Any, R : Any> get(argumentReference: ArgumentReference<T, R>): R {
-        return cachedArguments.getOrPut(argumentReference.name) {
-            argumentReference.resolve(this)
-        }.forceCastOrNull<R>() ?: throw IllegalArgumentException("Argument ${argumentReference.name} is not of type ${argumentReference::class.simpleName}")
-    }
+    operator fun <T : Any> get(argument: ArgumentProvider<*, T>): T =
+        argument.resolve(this)
 
     @BrigadiKtDSL
-    operator fun <T : Any, R : Any> ArgumentReference<T, R>.invoke(): R =
+    operator fun <T : Any> ArgumentProvider<*, T>.invoke(): T =
         this@CommandContext[this]
 
     // state modification

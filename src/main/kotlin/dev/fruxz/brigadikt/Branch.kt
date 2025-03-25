@@ -1,10 +1,11 @@
-@file:Suppress("UnstableApiUsage")
+@file:Suppress("UnstableApiUsage", "OPT_IN_USAGE_FUTURE_ERROR")
 
 package dev.fruxz.brigadikt
 
 import com.mojang.brigadier.arguments.ArgumentType
 import dev.fruxz.brigadikt.executor.CommandExecutor
 import dev.fruxz.brigadikt.executor.RequirementExecutor
+import dev.fruxz.brigadikt.structure.*
 import io.papermc.paper.command.brigadier.argument.resolvers.ArgumentResolver
 import org.bukkit.plugin.Plugin
 import kotlin.reflect.KClass
@@ -24,7 +25,7 @@ data class BranchRequirement(
 open class Branch(
     val parent: Branch? = null,
     var chatRenderer: ReplyChatRenderer? = null,
-    var arguments: List<ArgumentProvider<out Any, out Any>> = listOf(),
+    var arguments: List<ArgumentInstruction<out Any>> = listOf(),
     var requirements: List<BranchRequirement> = listOf(),
     var children: List<Branch> = listOf(),
     var execution: CommandExecutor? = null
@@ -36,7 +37,7 @@ open class Branch(
             if (current is CommandBranch<*>) {
                 addAll(0, listOf(current.plugin.name.lowercase(), "command", current.name))
             }
-            addAll(0, current.arguments.map(ArgumentProvider<*, *>::name))
+            addAll(0, current.arguments.map(ArgumentInstruction<out Any>::displayName))
             current = current.parent
         }
     }
@@ -84,7 +85,13 @@ open class Branch(
         children += Branch(
             parent = this,
             chatRenderer = this.chatRenderer,
-            arguments = literals.map { LiteralArgumentProvider(it) },
+            arguments = when (literals.size) {
+                0 -> emptyList()
+                1 -> listOf(LiteralArgumentInstruction(literals.first()))
+                else -> listOf(LiteralChainArgumentInstruction(
+                    literals.map(::LiteralArgumentInstruction)
+                ))
+            },
             requirements = this.requirements.filter { it.target == BranchRequirement.BranchRequirementTarget.PASS_THROUGH }, // pass through requirements
         ).apply(builder)
     }
@@ -92,25 +99,31 @@ open class Branch(
     // arguments - argument
 
     @BrigadiKtDSL
-    fun <T : Any> argument(type: ArgumentType<T>, clazz: KClass<T>, name: String? = null): VariableArgumentProvider<T> {
-        return VariableArgumentProvider(name, VariableArgumentInstruction(type, clazz)).also { arguments += it }
-    }
+    fun <T : Any> argument(type: ArgumentType<T>, clazz: KClass<T>, name: String? = null) = ArgumentProvider.create(
+        name = name,
+        argument = { VariableArgumentInstruction(it, type, clazz) }
+    )
 
     @BrigadiKtDSL
-    inline fun <reified T : Any> argument(type: ArgumentType<T>, name: String? = null): VariableArgumentProvider<T> =
+    inline fun <reified T : Any> argument(type: ArgumentType<T>, name: String? = null): ArgumentProvider<*, T> =
         argument(type, T::class, name)
 
 
     // arguments - resolvable argument
 
     @BrigadiKtDSL
-    fun <T : ArgumentResolver<R>, R : Any> argument(type: ArgumentType<T>, clazz: KClass<T>, name: String? = null): ResolvableArgumentProvider<T, R> {
-        return ResolvableArgumentProvider(name, VariableArgumentInstruction(type, clazz)).also { arguments += it }
-    }
+    @JvmName("argumentResolvable")
+    fun <T : ArgumentResolver<R>, R : Any> argument(resolvableType: ArgumentType<T>, clazz: KClass<T>, name: String? = null) =
+        argument(type = resolvableType, clazz = clazz, name = name).resolve()
 
     @BrigadiKtDSL
-    inline fun <reified T : ArgumentResolver<R>, reified R : Any> argument(type: ArgumentType<T>, name: String? = null): ResolvableArgumentProvider<T, R> =
-        argument(type, T::class, name)
+    @JvmName("argumentResolvable")
+    inline fun <reified T : ArgumentResolver<R>, reified R : Any> argument(resolvableType: ArgumentType<T>, name: String? = null) =
+        argument(type = resolvableType, T::class, name).resolve()
+
+    // switch
+
+    fun switch(vararg options: String) = ArgumentProvider.create(null) { SwitchArgumentInstruction(options.toSet()) }
 
 }
 
@@ -120,7 +133,7 @@ class CommandBranch<T : Plugin>(
     var description: String = "",
     var aliases: List<String> = emptyList(),
     chatRenderer: ReplyChatRenderer? = null,
-    arguments: List<ArgumentProvider<out Any, out Any>> = listOf(),
+    arguments: List<ArgumentInstruction<out Any>> = listOf(),
     requirements: List<BranchRequirement> = listOf(),
     children: List<Branch> = listOf(),
     execution: CommandExecutor? = null,

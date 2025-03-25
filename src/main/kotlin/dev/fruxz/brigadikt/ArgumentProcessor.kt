@@ -2,29 +2,30 @@
 
 package dev.fruxz.brigadikt
 
+import dev.fruxz.brigadikt.structure.ArgumentProvider
+import dev.fruxz.brigadikt.structure.OptionalArgumentInstruction
 import io.papermc.paper.command.brigadier.argument.resolvers.ArgumentResolver
 
-fun interface ArgumentProcessor<R : Any, O : Any> {
-    fun process(context: CommandContext, raw: R): O
-}
+fun <I : Any, O> ArgumentProvider<I, O>.optional() = ArgumentProvider(
+    lazyArgument = { name -> OptionalArgumentInstruction(this.lazyArgument(name)) },
+    name = name,
+    processor = processor,
+)
 
-fun <T : Any, R : Any, O : Any> ArgumentProvider<T, R>.processor(processor: ArgumentProcessor<R, O>) =
-    ArgumentProviderProcessor(this, processor)
+fun <O : ArgumentResolver<T>, T : Any> ArgumentProvider<*, O>.resolve() =
+    extend { this.resolve(it.raw.source) }
 
-fun <R : ArgumentResolver<O>, O : Any> ArgumentProvider<*, R>.resolve() =
-    processor { context, raw -> raw.resolve(context.raw.source) }
+fun <T> ArgumentProvider<*, List<T>>.first() =
+    extend { first() }
 
-fun <R : Iterable<O>, O : Any> ArgumentProvider<*, R>.first() =
-    processor { _, raw -> raw.first() }
+fun <T> ArgumentProvider<*, List<T>>.last() =
+    extend { last() }
 
-fun <R : Iterable<O>, O : Any> ArgumentProvider<*, R>.last() =
-    processor { _, raw -> raw.last() }
+fun <T> ArgumentProvider<*, List<T>>.filter(predicate: (T) -> Boolean) =
+    extend { filter(predicate) }
 
-fun <R : Iterable<O>, O : Any> ArgumentProvider<*, R>.filter(predicate: (O) -> Boolean) =
-    processor { _, raw -> raw.filter(predicate) }
+fun <T> ArgumentProvider<*, List<T>>.reversed() =
+    extend { reversed() }
 
-fun <R : Iterable<O>, O : Any> ArgumentProvider<*, R>.reversed() =
-    processor { _, raw -> raw.reversed() }
-
-fun ArgumentProvider<*, String>.string(format: String.() -> String) =
-    processor { _, raw -> format(raw) }
+fun <O> ArgumentProvider<*, String>.string(format: String.() -> O) =
+    extend { format(this) }

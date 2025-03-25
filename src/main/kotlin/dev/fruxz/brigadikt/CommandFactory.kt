@@ -3,6 +3,9 @@
 package dev.fruxz.brigadikt
 
 import dev.fruxz.ascend.extension.objects.takeIfInstance
+import dev.fruxz.brigadikt.structure.ArgumentInstruction
+import dev.fruxz.brigadikt.structure.MultipleArgumentInstructionResult
+import dev.fruxz.brigadikt.structure.SingleArgumentInstructionResult
 import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.command.brigadier.Commands
 import com.mojang.brigadier.builder.ArgumentBuilder as BrigadierBuilderArgumentBuilder
@@ -22,7 +25,7 @@ object CommandFactory {
     fun CommandBranch<*>.render(): BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack> =
         renderCommand(this)
 
-    fun renderBranch(raw: PaperArgBuilder, branch: Branch, queuedArguments: List<ArgumentProvider<*, *>>): PaperArgBuilder {
+    fun renderBranch(raw: PaperArgBuilder, branch: Branch, queuedArguments: List<ArgumentInstruction<*>>): List<PaperArgBuilder> {
 
         if (branch.requirements.isNotEmpty()) {
             raw.requires { context ->
@@ -50,49 +53,59 @@ object CommandFactory {
                     throw IllegalStateException("Empty path, no queued arguments and no children")
                 }
 
-                return raw
+                return listOf(raw)
             }
             1 -> {
                 val path = queuedArguments.first().produce()
-
-                val children = branch.children
-                if (children.isNotEmpty()) {
-                    children.forEach { child ->
-                        renderBranch(path, child, child.arguments)
-                    }
+                val results = when (path) {
+                    is SingleArgumentInstructionResult -> listOf(path.result)
+                    is MultipleArgumentInstructionResult -> path.results
                 }
+                val produced = results.map { result ->
 
-                val execution = branch.execution
-                if (execution != null) {
-                    path.executes { context ->
-                        var resultState = 0
-                        val commandContext = object : CommandContext(
-                            raw = context,
-                            cachedArguments = mutableMapOf(),
-                            path = branch.buildNamePath(),
-                            replyRenderer = branch.chatRenderer,
-                        ) {
-                            override fun state(state: Int, process: () -> Unit) {
-                                resultState = state
-                                process()
-                            }
+                    val children = branch.children
+                    if (children.isNotEmpty()) {
+                        children.forEach { child ->
+                            renderBranch(result, child, child.arguments)
                         }
-
-                        with(execution) { commandContext.execution() }
-
-                        return@executes resultState
                     }
+
+                    val execution = branch.execution
+                    if (execution != null) {
+                        result.executes { context ->
+                            var resultState = 0
+                            val commandContext = object : CommandContext(
+                                raw = context,
+                                path = branch.buildNamePath(),
+                                replyRenderer = branch.chatRenderer,
+                            ) {
+                                override fun state(state: Int, process: () -> Unit) {
+                                    resultState = state
+                                    process()
+                                }
+                            }
+
+                            with(execution) { commandContext.execution() }
+
+                            return@executes resultState
+                        }
+                    }
+
+                    return@map raw.then(result)
                 }
 
-                return raw.then(path)
+                return produced
             }
             else -> {
                 val argument = queuedArguments.first()
-                val producedBranch = argument.produce()
-
-                return raw.then(
-                    renderBranch(producedBranch, branch, queuedArguments.drop(1))
-                )
+                return when (val producedBranch = argument.produce()) {
+                    is SingleArgumentInstructionResult -> listOf(raw.then(producedBranch.result))
+                    is MultipleArgumentInstructionResult -> {
+                        producedBranch.results.map { result -> // TODO maybe foreach instead, since it should only return the branch base`?
+                            raw.then(result)
+                        }
+                    }
+                }
             }
         }
     }
