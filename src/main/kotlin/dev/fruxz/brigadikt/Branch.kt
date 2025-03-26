@@ -8,7 +8,6 @@ import dev.fruxz.brigadikt.executor.RequirementExecutor
 import dev.fruxz.brigadikt.structure.*
 import io.papermc.paper.command.brigadier.argument.resolvers.ArgumentResolver
 import org.bukkit.plugin.Plugin
-import org.jetbrains.annotations.ApiStatus
 import kotlin.reflect.KClass
 
 data class BranchRequirement(
@@ -122,11 +121,6 @@ open class Branch(
     @JvmName("argumentResolvable")
     inline fun <reified T : ArgumentResolver<R>, reified R : Any> argument(resolvableType: ArgumentType<T>, name: String? = null) =
         argument(type = resolvableType, T::class, name).resolve()
-
-    // switch
-
-    @ApiStatus.Experimental
-    fun switch(vararg options: String) = ArgumentProvider.create(null, argumentStorage = ::arguments, argument = { SwitchArgumentInstruction(options.toSet()) })
 
 }
 

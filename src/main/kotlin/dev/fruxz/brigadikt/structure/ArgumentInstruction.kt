@@ -2,18 +2,13 @@
 
 package dev.fruxz.brigadikt.structure
 
-import com.mojang.brigadier.StringReader
 import com.mojang.brigadier.arguments.ArgumentType
-import com.mojang.brigadier.arguments.StringArgumentType
-import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import dev.fruxz.ascend.tool.smart.generate.producible.Producible
 import dev.fruxz.brigadikt.CommandContext
 import io.papermc.paper.command.brigadier.Commands
-import io.papermc.paper.command.brigadier.argument.CustomArgumentType
 import net.kyori.adventure.identity.Identified
 import net.kyori.adventure.identity.Identity
 import java.util.*
-import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
 
 
@@ -92,51 +87,6 @@ data class VariableArgumentInstruction<T : Any>(
         SingleArgumentInstructionResult(
             instruction = this,
             result = Commands.argument(name, type),
-        )
-
-}
-
-data class SwitchArgumentType(val options: Set<String>) : CustomArgumentType<String, String> {
-
-    override fun parse(reader: StringReader): String =
-        reader.readString().takeIf { it in options } ?: throw IllegalArgumentException("Invalid switch")
-
-    override fun getNativeType(): StringArgumentType = when {
-        options.none { it.contains(" ") } -> StringArgumentType.word()
-        else -> StringArgumentType.string()
-    }
-
-    override fun <S : Any> listSuggestions(
-        context: com.mojang.brigadier.context.CommandContext<S>,
-        builder: SuggestionsBuilder
-    ) = CompletableFuture.supplyAsync {
-        options.forEach {
-            if (!it.contains(builder.input.drop(builder.start).split(' ').first(), true)) return@forEach
-            builder.suggest(it)
-        }
-        builder.build()
-    }
-
-}
-
-data class SwitchArgumentInstruction(
-    val options: Set<String>,
-    override val uuid: UUID = UUID.randomUUID(),
-) : ArgumentInstruction<String> {
-
-    init {
-        require(options.none { it.isEmpty() }) { "Empty options are not allowed" }
-    }
-
-    override val displayName: String = options.joinToString("|")
-
-    override fun resolve(context: CommandContext): String =
-        context.raw.getArgument(displayName, String::class.java)
-
-    override fun produce() =
-        SingleArgumentInstructionResult(
-            instruction = this,
-            result = Commands.argument(displayName, SwitchArgumentType(options)),
         )
 
 }
