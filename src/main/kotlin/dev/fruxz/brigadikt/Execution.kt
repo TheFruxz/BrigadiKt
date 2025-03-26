@@ -5,8 +5,10 @@ package dev.fruxz.brigadikt
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.context.CommandContext
 import dev.fruxz.ascend.extension.forceCastOrNull
+import dev.fruxz.ascend.extension.isNotNull
 import dev.fruxz.ascend.extension.logging.getItsLogger
 import dev.fruxz.ascend.extension.switch
+import dev.fruxz.ascend.extension.tryOrNull
 import dev.fruxz.brigadikt.structure.ArgumentProvider
 import dev.fruxz.stacked.StackedBuilder
 import dev.fruxz.stacked.extension.api.StyledString
@@ -56,6 +58,22 @@ abstract class CommandContext(
     @BrigadiKtDSL
     operator fun <T : Any> ArgumentProvider<*, T>.invoke(): T =
         this@CommandContext[this]
+
+    /**
+     * Useful for checking optional arguments presence
+     */
+    @BrigadiKtDSL
+    val ArgumentProvider<*, *>.isPresent: Boolean get() = tryOrNull { this.resolve(this@CommandContext) }.isNotNull // TODO maybe improve it? Copilot suggested this code but...
+
+    @BrigadiKtDSL
+    inline fun <T : Any> ArgumentProvider<*, T>.isPresent(block: (argument: T) -> Unit) {
+        if (isPresent) block(this())
+    }
+
+    @BrigadiKtDSL
+    inline fun <T : Any> ArgumentProvider<*, T>.isNotPresent(block: () -> Unit) {
+        if (!isPresent) block()
+    }
 
     // state modification
     @BrigadiKtDSL abstract fun state(state: Int, process: () -> Unit = { })
