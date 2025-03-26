@@ -9,6 +9,7 @@ import io.papermc.paper.command.brigadier.argument.resolvers.ArgumentResolver
 fun <I : Any, O> ArgumentProvider<I, O>.optional() = ArgumentProvider(
     lazyArgument = { name -> OptionalArgumentInstruction(this.lazyArgument(name)) },
     name = name,
+    argumentStorage = argumentStorage,
     processor = processor,
 )
 

@@ -101,7 +101,8 @@ open class Branch(
     @BrigadiKtDSL
     fun <T : Any> argument(type: ArgumentType<T>, clazz: KClass<T>, name: String? = null) = ArgumentProvider.create(
         name = name,
-        argument = { VariableArgumentInstruction(it, type, clazz) }
+        argument = { VariableArgumentInstruction(it, type, clazz) },
+        argumentStorage = ::arguments,
     )
 
     @BrigadiKtDSL
@@ -123,7 +124,7 @@ open class Branch(
 
     // switch
 
-    fun switch(vararg options: String) = ArgumentProvider.create(null) { SwitchArgumentInstruction(options.toSet()) }
+    fun switch(vararg options: String) = ArgumentProvider.create(null, argumentStorage = ::arguments, argument = { SwitchArgumentInstruction(options.toSet()) })
 
 }
 
