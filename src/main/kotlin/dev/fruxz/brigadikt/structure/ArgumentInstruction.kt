@@ -12,11 +12,7 @@ import java.util.*
 import kotlin.reflect.KClass
 
 
-fun interface Processor<I, O> {
-    fun I.process(context: CommandContext): O
-} // TODO move to own class
-
-sealed interface ArgumentInstruction<O> : Producible<ArgumentInstructionResult<*>>, Identified {
+sealed interface ArgumentInstruction<O> : Producible<ArgumentInstructionResult>, Identified {
 
     val uuid: UUID
 

@@ -6,27 +6,28 @@ import dev.fruxz.brigadikt.structure.ArgumentProvider
 import dev.fruxz.brigadikt.structure.OptionalArgumentInstruction
 import io.papermc.paper.command.brigadier.argument.resolvers.ArgumentResolver
 
-fun <I : Any, O> ArgumentProvider<I, O>.optional() = ArgumentProvider(
+fun <I : Any, O> ArgumentProvider<I, O>.optional(default: O? = null) = ArgumentProvider(
     lazyArgument = { name -> OptionalArgumentInstruction(this.lazyArgument(name)) },
     name = name,
     argumentStorage = argumentStorage,
     processor = processor,
+    default = default,
 )
 
 fun <O : ArgumentResolver<T>, T : Any> ArgumentProvider<*, O>.resolve() =
-    extend { this.resolve(it.raw.source) }
+    extend { context, input -> input.resolve(context.raw.source) }
 
-fun <T> ArgumentProvider<*, List<T>>.first() =
-    extend { first() }
+fun <O, I : Iterable<O>> ArgumentProvider<*, I>.first() =
+    extend { _, input -> input.first() }
 
-fun <T> ArgumentProvider<*, List<T>>.last() =
-    extend { last() }
+fun <O, I : Iterable<O>> ArgumentProvider<*, I>.last() =
+    extend { _, input -> input.last() }
 
-fun <T> ArgumentProvider<*, List<T>>.filter(predicate: (T) -> Boolean) =
-    extend { filter(predicate) }
+fun <O, I : Iterable<O>> ArgumentProvider<*, I>.filter(predicate: (O) -> Boolean) =
+    extend { _, input -> input.filter(predicate) }
 
-fun <T> ArgumentProvider<*, List<T>>.reversed() =
-    extend { reversed() }
+fun <O, I : Iterable<O>> ArgumentProvider<*, I>.reversed() =
+    extend { _, input -> input.reversed() }
 
 fun <O> ArgumentProvider<*, String>.string(format: String.() -> O) =
-    extend { format(this) }
+    extend { _, input -> format(input) }

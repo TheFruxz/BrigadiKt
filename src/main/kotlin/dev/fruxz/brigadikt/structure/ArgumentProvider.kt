@@ -1,6 +1,6 @@
 package dev.fruxz.brigadikt.structure
 
-import dev.fruxz.brigadikt.Branch
+import dev.fruxz.ascend.extension.tryOrNull
 import dev.fruxz.brigadikt.CommandContext
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty
@@ -9,16 +9,36 @@ open class ArgumentProvider<I : Any, O>(
     val lazyArgument: (name: String) -> ArgumentInstruction<I>,
     var name: String?,
     val argumentStorage: KMutableProperty<List<ArgumentInstruction<out Any>>>,
+    val default: O? = null,
     val processor: Processor<I, O>,
 ) {
 
-    open fun resolve(context: CommandContext): O = with(processor) {
-        lazyArgument(name ?: throw IllegalStateException("name is not yet present in ArgumentProvider")).resolve(context).process(context)
-    }
+    open fun resolve(context: CommandContext): O =
+        tryOrNull {
+            processor.process(
+                context = context,
+                input = lazyArgument(name ?: throw IllegalStateException("name not yet present in ArgumentProvider")).resolve(context)
+            )
+        } ?: default ?: throw IllegalStateException("Failed to resolve ArgumentProvider")
 
-    fun <T> extend(processor: Processor<O, T>) = ArgumentProvider(lazyArgument, name, argumentStorage) futureProvider@{
-        with(processor) { (with(this@ArgumentProvider.processor) { process(it) }).process(it) }
-    }
+    /**
+     * Drops the default again, since its now not matching anymore
+     */
+    fun <T> extend(processor: Processor<O, T>) = ArgumentProvider(
+        lazyArgument = lazyArgument,
+        name = name,
+        argumentStorage = argumentStorage,
+        processor = futureProvider@{ context, input ->
+            processor.process(
+                context = context,
+                input = this@ArgumentProvider.processor.process(
+                    context = context,
+                    input = input
+                ),
+            )
+        },
+        default = null
+    )
 
     operator fun getValue(thisRef: Any?, property: KProperty<*>) = this
 
@@ -30,15 +50,14 @@ open class ArgumentProvider<I : Any, O>(
         return this
     }
 
-//    private fun toReference() = ArgumentReference(name ?: throw IllegalStateException("name is not yet present in ArgumentProvider"), lazyArgument(name!!), processor)
-
     companion object {
 
         fun <T : Any> create(
             name: String? = null,
             argument: (name: String) -> ArgumentInstruction<T>,
             argumentStorage: KMutableProperty<List<ArgumentInstruction<out Any>>>,
-        ) = ArgumentProvider(argument, name, argumentStorage) { this }
+            default: T? = null,
+        ) = ArgumentProvider(argument, name, argumentStorage, default) { _, input -> input }
 
     }
 
