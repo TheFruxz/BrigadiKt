@@ -1,11 +1,11 @@
 @file:Suppress("UnstableApiUsage")
-@file:OptIn(ExperimentalUuidApi::class)
 
 package dev.fruxz.brigadikt.structure
 
 import com.mojang.brigadier.StringReader
 import com.mojang.brigadier.arguments.ArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
+import com.mojang.brigadier.suggestion.SuggestionsBuilder
 import dev.fruxz.ascend.tool.smart.generate.producible.Producible
 import dev.fruxz.brigadikt.CommandContext
 import io.papermc.paper.command.brigadier.Commands
@@ -13,13 +13,13 @@ import io.papermc.paper.command.brigadier.argument.CustomArgumentType
 import net.kyori.adventure.identity.Identified
 import net.kyori.adventure.identity.Identity
 import java.util.*
+import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
-import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
+
 
 fun interface Processor<I, O> {
     fun I.process(context: CommandContext): O
-} // TODO
+} // TODO move to own class
 
 sealed interface ArgumentInstruction<O> : Producible<ArgumentInstructionResult<*>>, Identified {
 
@@ -99,11 +99,22 @@ data class VariableArgumentInstruction<T : Any>(
 data class SwitchArgumentType(val options: Set<String>) : CustomArgumentType<String, String> {
 
     override fun parse(reader: StringReader): String =
-        options.find { it.equals(reader.readString(), ignoreCase = true) } ?: throw IllegalArgumentException("Invalid switch")
+        reader.readString().takeIf { it in options } ?: throw IllegalArgumentException("Invalid switch")
 
     override fun getNativeType(): StringArgumentType = when {
         options.none { it.contains(" ") } -> StringArgumentType.word()
         else -> StringArgumentType.string()
+    }
+
+    override fun <S : Any> listSuggestions(
+        context: com.mojang.brigadier.context.CommandContext<S>,
+        builder: SuggestionsBuilder
+    ) = CompletableFuture.supplyAsync {
+        options.forEach {
+            if (!it.contains(builder.input.drop(builder.start).split(' ').first(), true)) return@forEach
+            builder.suggest(it)
+        }
+        builder.build()
     }
 
 }
@@ -117,7 +128,7 @@ data class SwitchArgumentInstruction(
         require(options.none { it.isEmpty() }) { "Empty options are not allowed" }
     }
 
-    override val displayName: String = "[${options.joinToString("|")}]"
+    override val displayName: String = options.joinToString("|")
 
     override fun resolve(context: CommandContext): String =
         context.raw.getArgument(displayName, String::class.java)
