@@ -32,6 +32,7 @@ open class Branch(
 ) {
 
     fun buildNamePath() = buildList {
+        return@buildList // TODO fix regression
         var current: Branch? = this@Branch
         while (current != null) {
             if (current is CommandBranch<*>) {
