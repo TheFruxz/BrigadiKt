@@ -47,6 +47,10 @@ open class Branch(
         this.execution = execution
     }
 
+    @BrigadiKtDSL
+    fun execute(block: CommandContext.() -> Unit) =
+        execute(CommandExecutor(block))
+
     // requirements
 
     @BrigadiKtDSL
