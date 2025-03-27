@@ -43,7 +43,6 @@ open class ArgumentProvider<I : Any, O>(
     operator fun getValue(thisRef: Any?, property: KProperty<*>) = this
 
     operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): ArgumentProvider<I, O> {
-        println("delegate for ${property.name} is ${this.javaClass.simpleName}")
         if (name == null) name = property.name
         argumentStorage.setter.call(argumentStorage.getter.call() + lazyArgument(name!!))
 

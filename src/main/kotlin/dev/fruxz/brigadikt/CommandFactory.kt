@@ -48,7 +48,7 @@ object CommandFactory {
             }
         }
 
-        if (queue.isEmpty() && execution != null) {
+        if (queue.none { it !is OptionalArgumentInstruction<*> } && execution != null) {
             this.executes { context ->
                 var resultState = 0
 
@@ -70,10 +70,7 @@ object CommandFactory {
         val produce = nextArgument?.produce()
 
         if (produce != null) {
-            val results = when (nextArgument) {
-                is OptionalArgumentInstruction -> produce.results + this
-                else -> produce.results
-            }
+            val results = produce.results
 
             results.forEach { result ->
                 this.then(renderBranch(result, branch, queue.drop(1)))
