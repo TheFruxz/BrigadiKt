@@ -12,7 +12,6 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder as BrigadierBuilderLi
 
 typealias PaperArgBuilder = BrigadierBuilderArgumentBuilder<CommandSourceStack, out BrigadierBuilderArgumentBuilder<CommandSourceStack, *>>
 
-// v2 attempt
 object CommandFactory {
 
     fun renderCommand(commandBranch: CommandBranch<*>): BrigadierBuilderLiteralArgumentBuilder<CommandSourceStack> {
@@ -38,12 +37,12 @@ object CommandFactory {
         if (requirements.isNotEmpty()) {
             this.requires {
                 requirements.all { requirement ->
-
-                    requirement.requirement.perform(object : RequirementContext(
-                        raw = it,
-                        path = branch.buildNamePath()
-                    ) {})
-
+                    requirement.requirement.perform(
+                        RequirementContext(
+                            raw = it,
+                            path = branch.buildNamePath()
+                        )
+                    )
                 }
             }
         }
@@ -52,32 +51,26 @@ object CommandFactory {
             this.executes { context ->
                 var resultState = 0
 
-                execution.perform(object : CommandContext(
-                    raw = context,
-                    path = branch.buildNamePath(),
-                    replyRenderer = branch.chatRenderer,
-                ) {
-                    override fun state(state: Int, process: () -> Unit) {
-                        resultState = state
-                        process()
-                    }
-                })
+                execution.perform(
+                    CommandContext(
+                        raw = context,
+                        path = branch.buildNamePath(),
+                        replyRenderer = branch.chatRenderer,
+                        state = { state, process -> resultState = state; process() }
+                    )
+                )
 
                 return@executes resultState
             }
         }
 
-        val produce = nextArgument?.produce()
-
-        if (produce != null) {
-            val results = produce.results
-
-            results.forEach { result ->
+        when(val produce = nextArgument?.produce()) {
+            null -> children.forEach {
+                child -> renderBranch(this, child, child.arguments)
+            }
+            else -> produce.results.forEach { result ->
                 this.then(renderBranch(result, branch, queue.drop(1)))
             }
-
-        } else {
-            children.forEach { child -> renderBranch(this, child, child.arguments) }
         }
 
     }

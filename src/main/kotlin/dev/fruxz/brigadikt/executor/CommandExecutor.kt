@@ -6,6 +6,6 @@ fun interface CommandExecutor {
 
     fun CommandContext.execution()
 
-    fun perform(context: CommandContext) = with(context) { execution() }
+    fun perform(context: CommandContext) = context.execution()
 
 }

@@ -15,19 +15,19 @@ fun <I : Any, O> ArgumentProvider<I, O>.optional(default: O? = null) = ArgumentP
 )
 
 fun <O : ArgumentResolver<T>, T : Any> ArgumentProvider<*, O>.resolve() =
-    extend { context, input -> input.resolve(context.raw.source) }
+    extend { context -> resolve(context.raw.source) }
 
 fun <O, I : Iterable<O>> ArgumentProvider<*, I>.first() =
-    extend { _, input -> input.first() }
+    extend { first() }
 
 fun <O, I : Iterable<O>> ArgumentProvider<*, I>.last() =
-    extend { _, input -> input.last() }
+    extend { last() }
 
 fun <O, I : Iterable<O>> ArgumentProvider<*, I>.filter(predicate: (O) -> Boolean) =
-    extend { _, input -> input.filter(predicate) }
+    extend { filter(predicate) }
 
 fun <O, I : Iterable<O>> ArgumentProvider<*, I>.reversed() =
-    extend { _, input -> input.reversed() }
+    extend { reversed() }
 
 fun <O> ArgumentProvider<*, String>.string(format: String.() -> O) =
-    extend { _, input -> format(input) }
+    extend { format(this) }

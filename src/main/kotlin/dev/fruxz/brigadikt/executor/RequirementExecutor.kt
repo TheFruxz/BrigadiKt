@@ -6,6 +6,6 @@ fun interface RequirementExecutor {
 
     fun RequirementContext.requirement(): Boolean
 
-    fun perform(context: RequirementContext): Boolean = with(context) { requirement() }
+    fun perform(context: RequirementContext): Boolean = context.requirement()
 
 }

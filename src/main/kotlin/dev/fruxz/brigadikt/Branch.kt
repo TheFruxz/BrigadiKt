@@ -12,15 +12,8 @@ import kotlin.reflect.KClass
 
 data class BranchRequirement(
     val requirement: RequirementExecutor,
-    val target: BranchRequirementTarget = BranchRequirementTarget.THIS,
-) {
-
-    enum class BranchRequirementTarget {
-        THIS,
-        PASS_THROUGH,
-    }
-
-}
+    val passthrough: Boolean = false,
+)
 
 open class Branch(
     val parent: Branch? = null,
@@ -55,17 +48,24 @@ open class Branch(
     // requirements
 
     @BrigadiKtDSL
-    fun requires(requirement: RequirementExecutor) {
-        this.requirements += BranchRequirement(requirement, target = BranchRequirement.BranchRequirementTarget.THIS)
+    fun requires(
+        passthrough: Boolean = false,
+        requirement: RequirementExecutor,
+    ) {
+        this.requirements += BranchRequirement(
+            requirement = requirement,
+            passthrough = passthrough
+        )
     }
 
     @BrigadiKtDSL
     fun requires(
-        target: BranchRequirement.BranchRequirementTarget,
-        requirement: RequirementExecutor
-    ) {
-        this.requirements += BranchRequirement(requirement, target = target)
-    }
+        passthrough: Boolean = false,
+        requirement: RequirementContext.() -> Boolean,
+    ) = requires(
+        requirement = RequirementExecutor(requirement),
+        passthrough = passthrough
+    )
 
     // formatter
 
@@ -81,7 +81,7 @@ open class Branch(
         children += Branch(
             parent = this,
             chatRenderer = this.chatRenderer,
-            requirements = this.requirements.filter { it.target == BranchRequirement.BranchRequirementTarget.PASS_THROUGH } // pass through requirements
+            requirements = this.requirements.filter(BranchRequirement::passthrough)
         ).apply(builder)
     }
 
@@ -90,14 +90,8 @@ open class Branch(
         children += Branch(
             parent = this,
             chatRenderer = this.chatRenderer,
-            arguments = when (literals.size) {
-                0 -> emptyList()
-                1 -> listOf(LiteralArgumentInstruction(literals.first()))
-                else -> listOf(LiteralChainArgumentInstruction(
-                    literals.map(::LiteralArgumentInstruction)
-                ))
-            },
-            requirements = this.requirements.filter { it.target == BranchRequirement.BranchRequirementTarget.PASS_THROUGH }, // pass through requirements
+            requirements = this.requirements.filter(BranchRequirement::passthrough),
+            arguments = literals.map { LiteralArgumentInstruction(it) }
         ).apply(builder)
     }
 
@@ -111,7 +105,7 @@ open class Branch(
     )
 
     @BrigadiKtDSL
-    inline fun <reified T : Any> argument(type: ArgumentType<T>, name: String? = null): ArgumentProvider<*, T> =
+    inline fun <reified T : Any> argument(type: ArgumentType<T>, name: String? = null): ArgumentProvider<T, T> =
         argument(type, T::class, name)
 
 

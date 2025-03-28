@@ -40,16 +40,17 @@ interface CommandAccess {
 
 }
 
-abstract class CommandContext(
+data class CommandContext(
     val raw: CommandContext<CommandSourceStack>,
     val replyRenderer: ReplyChatRenderer?,
-    final override val path: List<String>,
+    override val path: List<String>,
+    val state: (state: Int, process: () -> Unit) -> Unit,
 ): CommandAccess {
 
-    final override val sender = raw.source.sender
-    final override val executor = raw.source.executor
-    final override val audience = executor ?: sender
-    final override val isPlayer = audience is Player
+    override val sender = raw.source.sender
+    override val executor = raw.source.executor
+    override val audience = executor ?: sender
+    override val isPlayer = audience is Player
 
     @BrigadiKtDSL
     operator fun <T : Any> get(argument: ArgumentProvider<*, T>): T =
@@ -76,8 +77,7 @@ abstract class CommandContext(
     }
 
     // state modification
-    @BrigadiKtDSL abstract fun state(state: Int, process: () -> Unit = { })
-    @BrigadiKtDSL fun state(state: Int, message: ComponentLike) = state(state) { reply(message) }
+    @BrigadiKtDSL fun state(state: Int, message: ComponentLike) = this.state.invoke(state) { reply(message) }
     @BrigadiKtDSL fun state(state: Int, @StyledString message: String) = state(state, message.asStyledComponent)
 
     @BrigadiKtDSL fun fail(process: () -> Unit = { }) = state(0, process)
@@ -114,15 +114,15 @@ abstract class CommandContext(
 
 }
 
-abstract class RequirementContext(
+data class RequirementContext(
     val raw: CommandSourceStack,
-    final override val path: List<String>,
+    override val path: List<String>,
 ) : CommandAccess {
 
-    final override val sender = raw.sender
-    final override val executor = raw.executor
-    final override val audience = executor ?: sender
-    final override val isPlayer = audience is Player
+    override val sender = raw.sender
+    override val executor = raw.executor
+    override val audience = executor ?: sender
+    override val isPlayer = audience is Player
 
     override fun CommandSender.hasPathPermission(logResult: Boolean): Boolean =
         hasPermission(path.joinToString("."))

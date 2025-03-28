@@ -34,11 +34,10 @@ data class LiteralArgumentInstruction(
     override fun resolve(context: CommandContext): Nothing =
         throw IllegalStateException("LiteralArgumentInstruction could not be resolved")
 
-    override fun produce() =
-        SingleArgumentInstructionResult(
-            instruction = this,
-            result = Commands.literal(literal),
-        )
+    override fun produce() = ArgumentInstructionResult(
+        instruction = this,
+        results = listOf(Commands.literal(literal))
+    )
 
 }
 
@@ -52,16 +51,16 @@ data class LiteralChainArgumentInstruction(
     override fun resolve(context: CommandContext): Nothing =
         throw IllegalStateException("LiteralChainArgumentInstruction could not be resolved")
 
-    override fun produce(): SingleArgumentInstructionResult {
+    override fun produce(): ArgumentInstructionResult {
         var builder = Commands.literal(literals.first().literal)
 
         literals.drop(1).forEach { literal ->
             builder = builder.then(Commands.literal(literal.literal))
         }
 
-        return SingleArgumentInstructionResult(
+        return ArgumentInstructionResult(
             instruction = this,
-            result = builder,
+            results = listOf(builder),
         )
     }
 
@@ -80,9 +79,9 @@ data class VariableArgumentInstruction<T : Any>(
         context.raw.getArgument(name, clazz.java)
 
     override fun produce() =
-        SingleArgumentInstructionResult(
+        ArgumentInstructionResult(
             instruction = this,
-            result = Commands.argument(name, type),
+            results = listOf(Commands.argument(name, type)),
         )
 
 }

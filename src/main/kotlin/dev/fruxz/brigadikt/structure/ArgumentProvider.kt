@@ -15,7 +15,7 @@ open class ArgumentProvider<I : Any, O>(
 
     open fun resolve(context: CommandContext): O =
         tryOrNull {
-            processor.process(
+            processor.perform(
                 context = context,
                 input = lazyArgument(name ?: throw IllegalStateException("name not yet present in ArgumentProvider")).resolve(context)
             )
@@ -28,12 +28,12 @@ open class ArgumentProvider<I : Any, O>(
         lazyArgument = lazyArgument,
         name = name,
         argumentStorage = argumentStorage,
-        processor = futureProvider@{ context, input ->
-            processor.process(
+        processor = futureProvider@{ context ->
+            processor.perform(
                 context = context,
-                input = this@ArgumentProvider.processor.process(
+                input = this@ArgumentProvider.processor.perform(
                     context = context,
-                    input = input
+                    input = this
                 ),
             )
         },
@@ -56,7 +56,7 @@ open class ArgumentProvider<I : Any, O>(
             argument: (name: String) -> ArgumentInstruction<T>,
             argumentStorage: KMutableProperty<List<ArgumentInstruction<out Any>>>,
             default: T? = null,
-        ) = ArgumentProvider(argument, name, argumentStorage, default) { _, input -> input }
+        ) = ArgumentProvider(argument, name, argumentStorage, default) { this }
 
     }
 
