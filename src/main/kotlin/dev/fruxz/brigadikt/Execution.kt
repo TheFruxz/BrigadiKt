@@ -28,8 +28,6 @@ interface CommandAccess {
     val executor: Entity?
     val audience: CommandSender
 
-    val isPlayer: Boolean
-    val isConsole: Boolean get() = !isPlayer
     val path: List<String>
 
     @BrigadiKtDSL
@@ -50,7 +48,6 @@ data class CommandContext(
     override val sender = raw.source.sender
     override val executor = raw.source.executor
     override val audience = executor ?: sender
-    override val isPlayer = audience is Player
 
     @BrigadiKtDSL
     operator fun <T : Any> get(argument: ArgumentProvider<*, T>): T =
@@ -122,7 +119,6 @@ data class RequirementContext(
     override val sender = raw.sender
     override val executor = raw.executor
     override val audience = executor ?: sender
-    override val isPlayer = audience is Player
 
     override fun CommandSender.hasPathPermission(logResult: Boolean): Boolean =
         hasPermission(path.joinToString("."))

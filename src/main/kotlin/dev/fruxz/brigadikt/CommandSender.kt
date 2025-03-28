@@ -23,3 +23,11 @@ fun CommandSender.asPlayer(): Player {
 
     return this as Player
 }
+
+fun CommandSender.isPlayer(): Boolean {
+    contract {
+        returns(true) implies (this@isPlayer is Player)
+    }
+
+    return this is Player
+}
