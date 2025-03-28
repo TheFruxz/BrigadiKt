@@ -6,13 +6,21 @@ import dev.fruxz.brigadikt.structure.ArgumentProvider
 import dev.fruxz.brigadikt.structure.OptionalArgumentInstruction
 import io.papermc.paper.command.brigadier.argument.resolvers.ArgumentResolver
 
-fun <I : Any, O> ArgumentProvider<I, O>.optional(default: O? = null) = ArgumentProvider(
+fun <I : Any, O> ArgumentProvider<I, O>.optional(provider: DefaultProvider<out O>? = null) = ArgumentProvider(
     lazyArgument = { name -> OptionalArgumentInstruction(this.lazyArgument(name)) },
     name = name,
     argumentStorage = argumentStorage,
     processor = processor,
     default = default,
 )
+
+@JvmName("optionalDefaultStatic")
+fun <I : Any, O> ArgumentProvider<I, O>.optional(default: O) =
+    optional(provider = { default })
+
+@JvmName("optionalDefaultDynamic")
+fun <I : Any, O> ArgumentProvider<I, O>.optional(default: CommandContext.() -> O) =
+    optional(provider = DefaultProvider(default))
 
 fun <O : ArgumentResolver<T>, T : Any> ArgumentProvider<*, O>.resolve() =
     extend { context -> resolve(context.raw.source) }

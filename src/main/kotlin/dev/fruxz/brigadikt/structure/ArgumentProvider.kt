@@ -2,6 +2,7 @@ package dev.fruxz.brigadikt.structure
 
 import dev.fruxz.ascend.extension.tryOrNull
 import dev.fruxz.brigadikt.CommandContext
+import dev.fruxz.brigadikt.DefaultProvider
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KProperty
 
@@ -9,7 +10,7 @@ open class ArgumentProvider<I : Any, O>(
     val lazyArgument: (name: String) -> ArgumentInstruction<I>,
     var name: String?,
     val argumentStorage: KMutableProperty<List<ArgumentInstruction<out Any>>>,
-    val default: O? = null,
+    val default: DefaultProvider<out O>? = null,
     val processor: Processor<I, O>,
 ) {
 
@@ -19,7 +20,7 @@ open class ArgumentProvider<I : Any, O>(
                 context = context,
                 input = lazyArgument(name ?: throw IllegalStateException("name not yet present in ArgumentProvider")).resolve(context)
             )
-        } ?: default ?: throw IllegalStateException("Failed to resolve ArgumentProvider")
+        } ?: default?.provide(context) ?: throw IllegalStateException("Failed to resolve ArgumentProvider")
 
     /**
      * Drops the default again, since its now not matching anymore
@@ -37,7 +38,15 @@ open class ArgumentProvider<I : Any, O>(
                 ),
             )
         },
-        default = null
+        default = when (default) {
+            null -> null
+            else -> DefaultProvider {
+                processor.perform(
+                    context = this,
+                    input = this@ArgumentProvider.default.provide(this)
+                )
+            }
+        }
     )
 
     operator fun getValue(thisRef: Any?, property: KProperty<*>) = this
@@ -55,7 +64,7 @@ open class ArgumentProvider<I : Any, O>(
             name: String? = null,
             argument: (name: String) -> ArgumentInstruction<T>,
             argumentStorage: KMutableProperty<List<ArgumentInstruction<out Any>>>,
-            default: T? = null,
+            default: DefaultProvider<T>? = null,
         ) = ArgumentProvider(argument, name, argumentStorage, default) { this }
 
     }
