@@ -47,7 +47,7 @@ dependencies {
 
     // MoltenKt
     api("dev.fruxz:ascend:2025.3-c861242")
-    api("dev.fruxz:stacked:2025.3-a7cd9b7")
+    api("dev.fruxz:stacked:2025.3-b66c374")
 
     // Brigadier
     api("com.mojang:brigadier:1.0.18")
