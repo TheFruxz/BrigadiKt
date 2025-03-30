@@ -11,7 +11,7 @@ fun <I : Any, O> ArgumentProvider<I, O>.optional(provider: DefaultProvider<out O
     name = name,
     argumentStorage = argumentStorage,
     processor = processor,
-    default = default,
+    default = provider,
 )
 
 @JvmName("optionalDefaultStatic")
