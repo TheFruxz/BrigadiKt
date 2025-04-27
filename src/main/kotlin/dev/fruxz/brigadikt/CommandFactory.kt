@@ -34,20 +34,21 @@ object CommandFactory {
         val execution = branch.execution
         val nextArgument = queue.firstOrNull()
 
-        if (requirements.isNotEmpty()) {
-            this.requires {
-                requirements.all { requirement ->
-                    requirement.requirement.perform(
-                        RequirementContext(
-                            raw = it,
-                            path = branch.buildNamePath()
+        if (queue.none { it !is OptionalArgumentInstruction<*> } && execution != null) {
+
+            if (requirements.isNotEmpty()) {
+                this.requires {
+                    requirements.all { requirement ->
+                        requirement.requirement.perform(
+                            RequirementContext(
+                                raw = it,
+                                path = branch.buildNamePath()
+                            )
                         )
-                    )
+                    }
                 }
             }
-        }
 
-        if (queue.none { it !is OptionalArgumentInstruction<*> } && execution != null) {
             this.executes { context ->
                 var resultState = 0
 
@@ -69,7 +70,19 @@ object CommandFactory {
                 child -> renderBranch(this, child, child.arguments)
             }
             else -> produce.results.forEach { result ->
-                this.then(renderBranch(result, branch, queue.drop(1)))
+                this.then(
+                    renderBranch(result, branch, queue.drop(1))
+                        .requires {
+                            requirements.all { requirement ->
+                                requirement.requirement.perform(
+                                    RequirementContext(
+                                        raw = it,
+                                        path = branch.buildNamePath()
+                                    )
+                                )
+                            }
+                        }
+                )
             }
         }
 
