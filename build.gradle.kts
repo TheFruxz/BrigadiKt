@@ -6,7 +6,7 @@ plugins {
     id("org.jetbrains.dokka") version "2.0.0"
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.18"
     id("xyz.jpenilla.run-paper") version "2.3.1"
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "9.0.2"
     id("org.hildan.kotlin-publish") version "1.7.0"
 }
 
