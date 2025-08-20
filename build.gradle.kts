@@ -1,10 +1,10 @@
 import java.util.*
 
 plugins {
-    kotlin("jvm") version "2.1.20"
-    kotlin("plugin.serialization") version "2.1.20"
+    kotlin("jvm") version "2.2.10"
+    kotlin("plugin.serialization") version "2.2.10"
     id("org.jetbrains.dokka") version "2.0.0"
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.14"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.18"
     id("xyz.jpenilla.run-paper") version "2.3.1"
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("org.hildan.kotlin-publish") version "1.7.0"
@@ -43,17 +43,17 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
     // Paper
-    paperweight.paperDevBundle("1.21.4-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.21.8-R0.1-SNAPSHOT")
 
     // MoltenKt
-    api("dev.fruxz:ascend:2025.3-c861242")
-    api("dev.fruxz:stacked:2025.3-b66c374")
+    api("dev.fruxz:ascend:2025.8-013083a")
+    api("dev.fruxz:stacked:2025.8-ca42cc0")
 
     // Brigadier
     api("com.mojang:brigadier:1.0.18")
 
     // JetBrains
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
 
 }
 
