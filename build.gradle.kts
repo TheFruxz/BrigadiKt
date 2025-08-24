@@ -42,8 +42,8 @@ dependencies {
     paperweight.paperDevBundle("1.21.8-R0.1-SNAPSHOT")
 
     // MoltenKt
-    api("dev.fruxz:ascend:2025.8-013083a")
-    api("dev.fruxz:stacked:2025.8-ca42cc0")
+    api("dev.fruxz:ascend:2025.8-64943c6")
+    api("dev.fruxz:stacked:2025.8-d15c9d0")
 
     // Brigadier
     api("com.mojang:brigadier:1.0.18")
