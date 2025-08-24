@@ -1,6 +1,5 @@
 package dev.fruxz.brigadikt.structure
 
-import dev.fruxz.ascend.extension.tryOrNull
 import dev.fruxz.brigadikt.CommandContext
 import dev.fruxz.brigadikt.DefaultProvider
 import kotlin.reflect.KMutableProperty
@@ -14,13 +13,14 @@ open class ArgumentProvider<I : Any, O>(
     val processor: Processor<I, O>,
 ) {
 
-    open fun resolve(context: CommandContext): O =
-        tryOrNull {
-            processor.perform(
-                context = context,
-                input = lazyArgument(name ?: throw IllegalStateException("name not yet present in ArgumentProvider")).resolve(context)
-            )
-        } ?: default?.provide(context) ?: throw IllegalStateException("Failed to resolve ArgumentProvider")
+    open fun resolve(context: CommandContext): O = try {
+        processor.perform(
+            context = context,
+            input = lazyArgument(name ?: throw IllegalStateException("name (of the argument) not yet present in ArgumentProvider")).resolve(context)
+        )
+    } catch (e: Exception) {
+        default?.provide(context) ?: throw e
+    }
 
     /**
      * Drops the default again, since its now not matching anymore
