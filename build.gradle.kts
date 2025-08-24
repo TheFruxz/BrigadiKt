@@ -5,13 +5,11 @@ plugins {
     kotlin("plugin.serialization") version "2.2.10"
     id("org.jetbrains.dokka") version "2.0.0"
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.18"
-    id("xyz.jpenilla.run-paper") version "2.3.1"
-    id("com.gradleup.shadow") version "9.0.2"
     id("org.hildan.kotlin-publish") version "1.7.0"
 }
 
-val publishVersion = System.getenv("GH_RELEASE_VERSION")
-val calendar = Calendar.getInstance()
+val publishVersion: String? = System.getenv("GH_RELEASE_VERSION")
+val calendar: Calendar = Calendar.getInstance()
 
 group = "dev.fruxz"
 version = publishVersion?.plus("-preview") ?: "${calendar[Calendar.YEAR]}.${calendar[Calendar.MONTH] + 1}-dev"
@@ -73,16 +71,9 @@ publishing {
 
 tasks {
 
-    compileKotlin {
-        compilerOptions {
-            freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
-        }
-    }
-
     dokkaHtml.configure {
         outputDirectory.set(layout.projectDirectory.dir("docs"))
     }
-
 }
 
 kotlin {
