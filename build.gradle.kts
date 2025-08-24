@@ -38,7 +38,6 @@ dependencies {
     // Kotlin
     testImplementation(kotlin("test"))
     implementation(kotlin("reflect"))
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
     // Paper
     paperweight.paperDevBundle("1.21.8-R0.1-SNAPSHOT")
