@@ -57,7 +57,7 @@ object CommandFactory {
                         raw = context,
                         path = branch.buildNamePath(),
                         replyRenderer = branch.chatRenderer,
-                        state = { state, process -> resultState = state; process() }
+                        state = { state -> resultState = state; }
                     )
                 )
 

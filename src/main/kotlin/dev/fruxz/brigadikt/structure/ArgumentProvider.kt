@@ -53,7 +53,7 @@ open class ArgumentProvider<I : Any, O>(
 
     operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): ArgumentProvider<I, O> {
         if (name == null) name = property.name
-        argumentStorage.setter.call(argumentStorage.getter.call() + lazyArgument(name!!))
+        argumentStorage.setter.call(argumentStorage.getter.call() + lazyArgument(name!!)) // TODO rewrite to avoid reflect calls which are notfound in classpath
 
         return this
     }

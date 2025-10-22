@@ -4,7 +4,6 @@ package dev.fruxz.brigadikt
 
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.context.CommandContext
-import dev.fruxz.ascend.extension.forceCastOrNull
 import dev.fruxz.ascend.extension.isNotNull
 import dev.fruxz.ascend.extension.logging.getItsLogger
 import dev.fruxz.ascend.extension.switch
@@ -20,7 +19,6 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.ComponentLike
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Entity
-import org.bukkit.entity.Player
 
 interface CommandAccess {
 
@@ -42,7 +40,7 @@ data class CommandContext(
     val raw: CommandContext<CommandSourceStack>,
     val replyRenderer: ReplyChatRenderer?,
     override val path: List<String>,
-    val state: (state: Int, process: () -> Unit) -> Unit,
+    val state: (state: Int) -> Unit,
 ): CommandAccess {
 
     override val sender = raw.source.sender
@@ -74,14 +72,23 @@ data class CommandContext(
     }
 
     // state modification
-    @BrigadiKtDSL fun state(state: Int, message: ComponentLike) = this.state.invoke(state) { reply(message) }
+    @BrigadiKtDSL fun state(state: Int, message: ComponentLike) {
+        this.state(state)
+        reply(message)
+    }
     @BrigadiKtDSL fun state(state: Int, @StyledString message: String) = state(state, message.asStyledComponent)
 
-    @BrigadiKtDSL fun fail(process: () -> Unit = { }) = state(0, process)
+    @BrigadiKtDSL inline fun fail(process: () -> Unit = { }) {
+        state(0)
+        process()
+    }
     @BrigadiKtDSL fun fail(message: ComponentLike) = state(0, message)
     @BrigadiKtDSL fun fail(@StyledString message: String) = state(0, message)
 
-    @BrigadiKtDSL fun success(process: () -> Unit = { }) = state(Command.SINGLE_SUCCESS, process)
+    @BrigadiKtDSL inline fun success(process: () -> Unit = { }) {
+        state(Command.SINGLE_SUCCESS)
+        process()
+    }
     @BrigadiKtDSL fun success(message: ComponentLike) = state(Command.SINGLE_SUCCESS, message)
     @BrigadiKtDSL fun success(@StyledString message: String) = state(Command.SINGLE_SUCCESS, message)
 
@@ -98,7 +105,7 @@ data class CommandContext(
         this.reply(component = message.asStyledComponent, sound = sound)
 
     @BrigadiKtDSL
-    fun reply(sound: Sound? = null, messageBuilder: StackedBuilder.() -> Unit) =
+    inline fun reply(sound: Sound? = null, messageBuilder: StackedBuilder.() -> Unit) =
         this.reply(Component.empty().toStackedBuilder().apply(messageBuilder), sound)
 
     override fun CommandSender.hasPathPermission(logResult: Boolean): Boolean =
